@@ -21,21 +21,21 @@ class App
 {
     /**
      * 应用名称
-     * 
+     *
      * @var string
      */
     private static $name;
 
     /**
      * 应用的url
-     * 
+     *
      * @var string
      */
     private static $url;
 
     /**
      * 应用的配置
-     * 
+     *
      * @var array
      */
     private static $config = array();
@@ -49,25 +49,25 @@ class App
 
     /**
      * initialize app
-     * 
+     *
      * @return void
      */
     public static function initialize()
     {
-       
+
         //注册自动加载函数
         spl_autoload_register('dolrAutoLoader');
 
         //应用目录
-        if (!file_exists(APP_PATH) 
+        if (!file_exists(APP_PATH)
             && false === mkdir(APP_PATH, 0777, true)) {
-            throw new Exception('应用目录"' . APP_PATH . '"不存在,尝试创建失败！');
+            throw new DolrException('应用目录"' . APP_PATH . '"不存在,尝试创建失败！');
         }
-        
+
         //加载应用配置文件
         $appConfig = APP_PATH . 'config.php';
-        if (!file_exists($_appConfig)) {
-            $tmp = file_get_contents(EXT_PATH . 'configSample.php');
+        if (!file_exists($appConfig)) {
+            $tmp = file_get_contents(INC_PATH . 'ConfigSample.php');
             W($appConfig, $tmp, false);
         }
 
@@ -84,7 +84,7 @@ class App
         self::$url = $appUrlInfo['base_url'];
 
         //将框架拓展目录加载到包含目录
-        set_include_path(EXT_PATH . PATH_SEPARATOR . get_include_path());
+        set_include_path(INC_PATH . PATH_SEPARATOR . get_include_path());
 
         //包含应用全局调用文件public.php
         self::includeAppPublicFile();
@@ -92,12 +92,12 @@ class App
 
     /**
      * 运行App
-     * 
+     *
      * @throws Exception 控制器不存在
-     * 
+     *
      * @return void
      */
-    public static function run() 
+    public static function run()
     {
         $module = ucfirst(MODULE_NAME . C('CONTROLLER_IDENTITY'));
         $action = ACTION_NAME;
@@ -119,10 +119,10 @@ class App
 
     /**
      * 实例化模板引擎对象
-     * 
+     *
      * @return object
      */
-    private public static function getEngine() 
+    private static function getEngine()
     {
         $options           = array(
             'template_dir'    => C('VIEW_PATH'), //模板目录
@@ -142,13 +142,13 @@ class App
 
     /**
      * initialize the dirs of App
-     * 
+     *
      * @return void
      */
     private function initAppDir()
     {
         //设置控制器标识
-        $controllerIdentity = C('CONTROLLER_IDENTITY'));
+        $controllerIdentity = C('CONTROLLER_IDENTITY');
         //目录检测与创建
         if (C('DIR_CHECK') or isset($_GET['dir_init'])) {
             $appDirs = array(
@@ -171,43 +171,43 @@ class App
 
     /**
      * 写入默认控制器
-     * 
-     * @return void 
+     *
+     * @return void
      */
     private function writeDefaultController() {
         $controllerIdentity = C('CONTROLLER_IDENTITY');
-        $controller         = C('CONTROLLER_PATH') . 'Index' 
+        $controller         = C('CONTROLLER_PATH') . 'Index'
                                 . C('CONTROLLER_IDENTITY') . '.php';
         if (file_exists($controller))
             return;
-        $content = file_get_contents(EXT_PATH . 'controllerSample.php');
+        $content = file_get_contents(INC_PATH . 'ControllerSample.php');
         W($controller, $content, false);
     }
 
     /**
      * 初始化配置
-     * 
+     *
      * @param  array  $appConfig 应用配置
-     * 
+     *
      * @return array
      */
-    public static function initAppConfig($appConfig = array()) 
+    public static function initAppConfig($appConfig = array())
     {
-        $defaultConfig = include EXT_PATH . 'configSample.php';
+        $defaultConfig = include INC_PATH . 'ConfigSample.php';
         $this->config = array_merge($defaultConfig, $_appConfig);
         //写入配置文件到缓存
-        $configFile = self::config['RUNTIME_PATH'].'config/config.php';
-        if(!file_exists($configFile) 
+        $configFile = self::$config['RUNTIME_PATH'].'config/config.php';
+        if(!file_exists($configFile)
             or filemtime(APP_PATH . 'config.php') > filemtime($configFile))
         $content = "<?php\n \$_appConfig = "
-                    .var_export(self::config, true) . ';';
+                    .var_export(self::$config, true) . ';';
         W($configFile, $content, false);
         include $configFile;
     }
 
     /**
      * 包含应用全局文件
-     * 
+     *
      * @return void
      */
     private function includeAppPublicFile()
