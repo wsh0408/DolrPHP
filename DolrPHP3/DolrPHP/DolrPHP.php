@@ -20,7 +20,7 @@ if (strlen($_SERVER['DOCUMENT_ROOT']) > strlen($dirOfScriptName) + 1) {
 }
 
 //base
-defined('APP_NAME')  or define('APP_NAME', basename($dirOfScriptName)); 
+defined('APP_NAME')  or define('APP_NAME', basename($dirOfScriptName));
 defined('APP_PATH')  or define('APP_PATH', $dirOfScriptName . '/');
 defined('DOLR_PATH') or define('DOLR_PATH', $dirOfLocal . '/');
 
@@ -36,7 +36,7 @@ define('IS_CLI', PHP_SAPI == 'cli' ? 1 : 0);
 include DOLR_PATH . 'App.php';
 
 //关闭错误输出
-//error_reporting(0);
+error_reporting(0);
 //设置错误处理函数
 set_error_handler(array('Trace','errorHandler'));
 //设置致命错误处理函数
@@ -51,12 +51,14 @@ define('MAGIC_QUOTES_GPC',get_magic_quotes_gpc());
 //关闭自动转义
 ini_set('magic_quotes_runtime', 0);
 
+//run & trace
+Trace::start();
+
 //init
 App::initialize();
 
-//run & trace
-Trace::start();
 App::run();
+
 Trace::end();
 
 //Trace

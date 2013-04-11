@@ -26,7 +26,7 @@ return array(
             'VIEW_CACHE'          => false, //模板缓存 0
             'VIEW_CACHE_LIFETIME' => 6 * 3600,  //模板缓存时间(秒)
             'VIEW_REPLACEMENT'    => array(),   //模板替换数据
-            'PAGE_404'            => INC_PATH . '404Sample.php',        //404页面 此三项都支持绝对，相对和相对模板路径
+            'PAGE_404'            => INC_PATH . '404Template.php',        //404页面 此三项都支持绝对，相对和相对模板路径
             'PAGE_SUCCESS'        => 'success.html',    //成功消息页面,相对于模板目录
             'PAGE_ERROR'          => 'error.html',      //失败消息页面
             'AJAX_SIGN'           => false, //AJAX表单检测依据

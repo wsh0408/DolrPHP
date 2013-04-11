@@ -26,7 +26,7 @@ class Controller
      * @param  int    $delay 跳转延迟时间
      * @return void
      */
-    public function error($msg, $url, $delay) 
+    public function error($msg, $url, $delay)
     {
         $this->_jump('error', $msg, $url, $delay);
     }
@@ -38,7 +38,7 @@ class Controller
      * @param  int     $delay     跳转延迟时间
      * @return void
      */
-    public function success($msg, $url, $delay) 
+    public function success($msg, $url, $delay)
     {
         $this->_jump('success', $msg, $url, $delay);
     }
@@ -51,7 +51,7 @@ class Controller
      * @param  int     $delay     跳转延迟时间
      * @return void
      */
-    private function _jump($type, $msg, $url, $delay) 
+    private function _jump($type, $msg, $url, $delay)
     {
         $tpl = strtolower(C('PAGE_' . strtoupper($type)));
         $this->assign('message', $msg);
@@ -67,7 +67,7 @@ class Controller
      * @param string 消息
      * @return string
      */
-    public function ajax($data, $info = '') 
+    public function ajax($data, $info = '')
     {
         if (!headers_sent()) {
             header('content-type: application/json; charset=utf-8');
@@ -77,26 +77,26 @@ class Controller
 
     /**
      * 分配变量[使用模板引擎时适用]
-     * 
+     *
      * @param  string     $varName     模板变量名
      * @param  mixed      $data        变量值
-     * 
+     *
      * @return void
      */
-    public function set($varName, $data) 
+    public function set($varName, $data)
     {
         App::$tplEngine->set($varName, $data);
     }
 
     /**
      * 渲染输出
-     * 
+     *
      * @param string $tplPath 模板路径
      * @param string $cacheId 缓存标记（缓存ID）
-     * 
+     *
      * @return void
      */
-    public function display($tplPath = '', $cacheId = NULL) 
+    public function display($tplPath = '', $cacheId = NULL)
     {
         if (C('VIEW_ENGINE_ON')) {
             $suffix = strval(C('VIEW_SUFFIX'));
@@ -122,12 +122,12 @@ class Controller
 
     /**
      * 重定向
-     * 
+     *
      * @param  string $url 完整的URL
-     * 
+     *
      * @return void
      */
-    public function go($url) 
+    public function go($url)
     {
         if (headers_sent())
             echo '<script>window.location.href="' . $url . '";</script>';
@@ -140,15 +140,15 @@ class Controller
      * 404错误
      *
      * @param string error info
-     * 
+     *
      * @return void
      */
-    public function error404($string = '') 
+    public function error404($string = '')
     {
         send_http_status(404);
         if (C('VIEW_ENGINE_ON')) {
             $this->set('errorInfo', $string);
-            $this->display(C('PAGE_404')); 
+            $this->display(C('PAGE_404'));
         } else {
             trigger_error($string);
         }
@@ -156,10 +156,10 @@ class Controller
 
     /**
      * log
-     * 
+     *
      * @param string $string log info
      * @param string $type   log type
-     * 
+     *
      * @return void
      */
     private function _log($string, $type = 'error')
@@ -169,9 +169,9 @@ class Controller
 
     /**
      * 错误/异常处理
-     * 
+     *
      * @param string $errorInfo 错误或异常信息
-     * 
+     *
      * @return void
      */
     private function _error($errorInfo)

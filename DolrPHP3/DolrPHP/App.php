@@ -73,7 +73,7 @@ class App
 
     /**
      * initialize app
-     * 
+     *
      * @return void
      */
     public static function initialize()
@@ -110,7 +110,7 @@ class App
 
         //获取应用当前的URL并定义为常量
         $appUrlInfo = current_urli(true);
-        self::$url = $appUrlInfo['base_url'];
+        self::$url = $appUrlInfo['base_dir_url'];
 
         //将框架拓展目录加载到包含目录
         set_include_path(INC_PATH . PATH_SEPARATOR . get_include_path());
@@ -123,9 +123,7 @@ class App
             self::_initViewEngine();
         }
 
-        $controller = Dispatcher::$module;
-        $controller = ucfirst($controller . C('CONTROLLER_IDENTITY'));
-
+        $controller = ucfirst(Dispatcher::$module . C('CONTROLLER_IDENTITY'));
         if (!class_exists($controller)) {
             self::$controller = new Controller();
             throw new DolrException("控制器 '{$controller}' 文件不存在！", 1);
@@ -223,7 +221,7 @@ class App
             return;
         }
         //写入默认控制器
-        $content = str_replace('__IDENTITY__', $controllerIdentity,
+        $content = str_replace('__IDENTITY__', C('CONTROLLER_IDENTITY'),
                      G(INC_PATH . 'ControllerSample.php', false));
         W($controller, $content, false);
     }
@@ -243,7 +241,7 @@ class App
         $configFile = $config['RUNTIME_PATH'].'config/config.php';
         if(!file_exists($configFile)
             || filemtime(APP_PATH . 'config.php') > filemtime($configFile)) {
-           
+
             $content = "<?php\n return ".var_export($config, true) . ';';
             W($configFile, $content, false);
         }
@@ -267,10 +265,10 @@ class App
 
     /**
      * log
-     * 
+     *
      * @param string $string log info
      * @param string $type   log type
-     * 
+     *
      * @return void
      */
     private static function _log($string, $type = 'error')
