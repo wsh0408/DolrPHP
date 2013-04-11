@@ -144,8 +144,8 @@ class DolrView
      * @param  string $varName  变量名
      * @param  mixed  $varValue 变量值
      */
-    public function assign($varName, $varValue) {
-        $this->_tpl_vars[$varName] = & $varValue;
+    public function set($varName, $varValue) {
+        $this->_tpl_vars[$varName] = &$varValue;
     }
 
     /**
@@ -276,7 +276,7 @@ class DolrView
      * @return string            文件名
      */
     protected function _getCachePath($tplFileName, $cacheId) {
-        return $this->_trimPath(trim($this->_options['cache_dir'], '/') . '/' . $tplFileName . '.cache.' . md5($cacheId) . '.php');
+        return $this->_trimPath(trim($this->_options['cache_dir'], '/') . '/' . basename($tplFileName) . '.cache.' . md5($cacheId) . '.php');
     }
 
     /**
@@ -287,7 +287,7 @@ class DolrView
      * @return string            文件名
      */
     protected function _getCompilePath($tplFileName, $cacheId) {
-        return $this->_trimPath(trim($this->_options['compile_dir'], '/') . '/' . $tplFileName . '.compile.php');
+        return $this->_trimPath(trim($this->_options['compile_dir'], '/') . '/' . basename($tplFileName) . '.compile.php');
     }
 
     /**

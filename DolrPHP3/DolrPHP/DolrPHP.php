@@ -14,10 +14,16 @@
 version_compare(PHP_VERSION, '5.3.0', '>') or die ('require PHP > 5.3.0 !');
 $dirOfScriptName = dirname($_SERVER['SCRIPT_FILENAME']);
 $dirOfLocal = str_replace('\\', '/', dirname(__FILE__));
+
+if (strlen($_SERVER['DOCUMENT_ROOT']) > strlen($dirOfScriptName) + 1) {
+    $dirOfScriptName = trim($_SERVER['DOCUMENT_ROOT'],'/');
+}
+
 //base
 defined('APP_NAME')  or define('APP_NAME', basename($dirOfScriptName)); 
 defined('APP_PATH')  or define('APP_PATH', $dirOfScriptName . '/');
 defined('DOLR_PATH') or define('DOLR_PATH', $dirOfLocal . '/');
+
 //dirs
 define('DB_PATH', DOLR_PATH . 'Db/');       //DolrPHP 数据库驱动目录
 define('EXT_PATH', DOLR_PATH . 'Ext/');     //DolrPHP 框架拓展目录
@@ -45,6 +51,7 @@ define('MAGIC_QUOTES_GPC',get_magic_quotes_gpc());
 //关闭自动转义
 ini_set('magic_quotes_runtime', 0);
 
+//init
 App::initialize();
 
 //run & trace

@@ -293,7 +293,7 @@ DOLR;
                     </div>
                 </div>
                 <div class="footer">
-                    <div class="tright">&lt;?php define( 'DolrPHP' , 'LESS IS MORE.' ); ?&gt;</div>
+                    <div class="tright">&lt;?php define( 'DolrPHP' , 'less is more.' ); ?&gt;</div>
                 </div>
             </div>
         </body>

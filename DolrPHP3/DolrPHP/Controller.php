@@ -85,8 +85,7 @@ class Controller
      */
     public function set($varName, $data) 
     {
-        $engine = App::getEngine();
-        $engine->assign($varName, $data);
+        App::$tplEngine->set($varName, $data);
     }
 
     /**
@@ -107,10 +106,13 @@ class Controller
                 $action  = App::$actionName;
                 $tplPath = strtolower("{$Controller}/{$action}.{$suffix}");
             }
-            if (!stripos($tplPath, ".{$suffix}")) { //没有加后缀的话
-                $tplPath .= ".{$suffix}";
+            //如果不是一个具体的文件路径
+            if (!file_exists($tplPath)) {
+                if (!stripos($tplPath, ".{$suffix}")) { //没有加后缀的话
+                    $tplPath .= ".{$suffix}";
+                }
+                $tplPath = C('VIEW_STYLE') . $tplPath;
             }
-            $tplPath = C('VIEW_STYLE') . $tplPath;
             $this->_log($tplPath, 'tpl');
             App::$tplEngine->display($tplPath, $cacheId = NULL);
         } else {
@@ -136,13 +138,20 @@ class Controller
 
     /**
      * 404错误
+     *
+     * @param string error info
      * 
      * @return void
      */
-    public function error404() 
+    public function error404($string = '') 
     {
         send_http_status(404);
-        $this->display(C('PAGE_404')); //TODO:404模板
+        if (C('VIEW_ENGINE_ON')) {
+            $this->set('errorInfo', $string);
+            $this->display(C('PAGE_404')); 
+        } else {
+            trigger_error($string);
+        }
     }
 
     /**

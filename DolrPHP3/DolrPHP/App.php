@@ -49,7 +49,7 @@ class App
      * 控制器名称
      * @var string
      */
-    public static $ControllerName;
+    public static $controllerName;
 
     /**
      * 应用的操作名
@@ -83,12 +83,9 @@ class App
 
         //应用目录
         if (!file_exists(APP_PATH)
-            && false === make_dir(APP_PATH, 0777)) {
+            && false === makeDir(APP_PATH, 0777)) {
             throw new DolrException('应用目录"' . APP_PATH . '"不存在,尝试创建失败！');
         }
-
-        //目录检测
-        self::_initAppDir();
 
         //加载应用配置文件
         $appConfig = APP_PATH . 'config.php';
@@ -100,11 +97,15 @@ class App
         //初始化配置
         self::_initAppConfig(include $appConfig);
 
+        //目录检测
+        self::_initAppDir();
+
         //开启session
         if (C('SESSION_AUTO_START')) {
             session_start();
         }
 
+        //初始化路由
         Dispatcher::initialize(C('ROUTING_TABLE'));
 
         //获取应用当前的URL并定义为常量
@@ -122,14 +123,17 @@ class App
             self::_initViewEngine();
         }
 
+        $controller = Dispatcher::$module;
         $controller = ucfirst($controller . C('CONTROLLER_IDENTITY'));
+
         if (!class_exists($controller)) {
             self::$controller = new Controller();
             throw new DolrException("控制器 '{$controller}' 文件不存在！", 1);
         }
-        
+
         self::$controller = new $controller();
-        self::$actionName = $action;
+        self::$controllerName = $controller;
+        self::$actionName = Dispatcher::$action;
     }
 
     /**
@@ -184,12 +188,10 @@ class App
      *
      * @return void
      */
-    private function _initAppDir()
+    private static function _initAppDir()
     {
-        //设置控制器标识
-        $controllerIdentity = C('CONTROLLER_IDENTITY');
         //目录检测与创建
-        if (C('DIR_CHECK') or isset($_GET['init_dir'])) {
+        if (C('DIR_CHECK')) {
             $appDirs = array(
                         C('CONTROLLER_PATH'),
                         C('MODEL_PATH'),
@@ -199,11 +201,12 @@ class App
                         C('EXTENSION_PATH'),
                        );
             foreach ($appDirs as $dir) {
-                if (!file_exists($dir) && false === make_dir($dir, 0777))
+                if (!file_exists($dir) && false === makeDir($dir, 0777)) {
                     throw new DolrException('应用目录"' . $dir . '"不存在,尝试创建失败！');
+                }
                 if ($dir == C('CONTROLLER_PATH')) {
-                    //写入默认控制器
-                    W($dir . 'Index' . C('CONTROLLER_IDENTITY'), G(INC_PATH . 'ControllerSample.php'));
+                    //设置控制器标识
+                    self::_writeDefaultController();
                 }
             }
         }
@@ -214,13 +217,14 @@ class App
      *
      * @return void
      */
-    private function _writeDefaultController() {
-        $controllerIdentity = C('CONTROLLER_IDENTITY');
-        $controller         = C('CONTROLLER_PATH') . 'Index'
-                                . C('CONTROLLER_IDENTITY') . '.php';
-        if (file_exists($controller))
+    private static function _writeDefaultController() {
+        $controller = C('CONTROLLER_PATH') . 'Index' . C('CONTROLLER_IDENTITY') . '.php';
+        if (file_exists($controller)) {
             return;
-        $content = file_get_contents(INC_PATH . 'ControllerSample.php');
+        }
+        //写入默认控制器
+        $content = str_replace('__IDENTITY__', $controllerIdentity,
+                     G(INC_PATH . 'ControllerSample.php', false));
         W($controller, $content, false);
     }
 
@@ -234,16 +238,16 @@ class App
     private static function _initAppConfig(array $appConfig)
     {
         $defaultConfig = include INC_PATH . 'ConfigBase.php';
-        self::$config = array_merge($defaultConfig, $appConfig);
+        $config = array_merge($defaultConfig, $appConfig);
         //写入配置文件到缓存
-        $configFile = self::$config['RUNTIME_PATH'].'config/config.php';
+        $configFile = $config['RUNTIME_PATH'].'config/config.php';
         if(!file_exists($configFile)
-            or filemtime(APP_PATH . 'config.php') > filemtime($configFile)) {
-            $content = "<?php\n \$_appConfig = "
-                        .var_export(self::$config, true) . ';';
+            || filemtime(APP_PATH . 'config.php') > filemtime($configFile)) {
+           
+            $content = "<?php\n return ".var_export($config, true) . ';';
             W($configFile, $content, false);
         }
-        include $configFile;
+        self::$config = include $configFile;
     }
 
     /**
