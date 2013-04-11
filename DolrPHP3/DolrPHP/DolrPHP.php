@@ -19,7 +19,6 @@ defined('APP_NAME')  or define('APP_NAME', basename($dirOfScriptName));
 defined('APP_PATH')  or define('APP_PATH', $dirOfScriptName . '/');
 defined('DOLR_PATH') or define('DOLR_PATH', $dirOfLocal . '/');
 //dirs
-define('BASE_PATH', DOLR_PATH . 'Base/');   //DolrPHP 基础文件目录
 define('DB_PATH', DOLR_PATH . 'Db/');       //DolrPHP 数据库驱动目录
 define('EXT_PATH', DOLR_PATH . 'Ext/');     //DolrPHP 框架拓展目录
 define('INC_PATH', DOLR_PATH . 'Inc/');     //DolrPHP 基础文件目录
@@ -27,19 +26,30 @@ define('IS_CGI', substr(PHP_SAPI, 0, 3) == 'cgi' ? 1 : 0);
 define('IS_WIN', strstr(PHP_OS, 'WIN') ? 1 : 0);
 define('IS_CLI', PHP_SAPI == 'cli' ? 1 : 0);
 
-
-//include class trace
-include BASE_PATH . 'Trace.php';
-//include functions
-include INC_PATH . 'Functions.php';
-
 //init more
-include BASE_PATH . 'Dolr.php';
-Dolr::initialize();
+include DOLR_PATH . 'App.php';
+
+//关闭错误输出
+//error_reporting(0);
+//设置错误处理函数
+set_error_handler(array('Trace','errorHandler'));
+//设置致命错误处理函数
+register_shutdown_function(array('Trace','shutdownHandler'));
+//设置异常处理函数
+set_exception_handler(array('Trace','exceptionHandler'));
+//强制输出编码为UTF-8
+header('Content-Type: text/html; charset=utf-8');
+
+//自动转义
+define('MAGIC_QUOTES_GPC',get_magic_quotes_gpc());
+//关闭自动转义
+ini_set('magic_quotes_runtime', 0);
+
+App::initialize();
 
 //run & trace
 Trace::start();
-Dolr::run();
+App::run();
 Trace::end();
 
 //Trace

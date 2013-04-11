@@ -1,6 +1,6 @@
 <?php
 return array(
-            'DEBUG'               => false,
+            'DEBUG'               => true,
             'SHOW_TRACE'          => true,
             'DIR_CHECK'           => false,     //目录自动检测
             'ROUTING_TABLE'       => array(),   //路由表
