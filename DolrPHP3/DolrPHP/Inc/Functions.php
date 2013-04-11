@@ -27,7 +27,6 @@ function dolrAutoLoader($className)
         include DB_PATH . str_replace('_', '/', substr($className, 3)) . '.php';
     } else {
         trigger_error('类"' . $className . '"无法加载，文件不存在或名称错误.');
-        exit;
     }
     Trace::L($className, 'class');
 }
@@ -73,7 +72,7 @@ function W($path, $content, $serialized = true)
 {
     if ($serialized)
         $content = data2json($content);
-    if (!file_exists(dirname($path)) and false === make_dir(dirname($path)))
+    if (!file_exists(dirname($path)) and false === makeDir(dirname($path)))
         trigger_error('文件写入失败：[路径"' . dirname($path) . '"不存在，且尝试创建失败]');
     else
         file_put_contents($path, $content);
@@ -82,16 +81,20 @@ function W($path, $content, $serialized = true)
 
 /**
  * 读取文件
+ * 
  * @param string  $path       目标路径
  * @param boolean $serialized 是否json格式化
+ * 
  * @return string|array
  */
 function G($path, $serialized = true)
 {
-    if (!file_exists(dirname($path)) or !is_readable(dirname($path)))
+    if (!file_exists($path) or !is_readable($path)) {
         trigger_error('文件读取失败：[路径"' . $path . '"不存在或不可读]');
-    if ($serialized)
+    }
+    if ($serialized) {
         return json_decode(file_get_contents($path), true);
+    }
 
     return file_get_contents($path);
 }
@@ -245,7 +248,7 @@ function import($file)
  * 
  * @return boolean
  */
-function make_dir($path, $mode = 0755)
+function makeDir($path, $mode = 0755)
 {
     return mkdir($path, $mode, true);
 }
@@ -257,15 +260,15 @@ function make_dir($path, $mode = 0755)
  * 
  * @return boolean
  */
-function del_dir($dir) 
+function delDir($dir) 
 {
     if (!file_exists($dir)) return true;
     if (!is_dir($dir) || is_link($dir)) return unlink($dir);
     foreach (scandir($dir) as $item) {
         if ($item == '.' || $item == '..') continue;
-        if (!del_dir($dir . '/' . $item)) {
+        if (!delDir($dir . '/' . $item)) {
             chmod($dir . '/' . $item, 0777);
-            if (!del_dir($dir . '/' . $item)) return false;
+            if (!delDir($dir . '/' . $item)) return false;
         }
     }
 
