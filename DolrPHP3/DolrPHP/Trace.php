@@ -52,7 +52,7 @@ class Trace
      *
      * @var array
      */
-    public static $loadedClasses = array();
+    public static $loadedClasses = array('App','Trace');
 
     /**
      * 错误信息
@@ -164,7 +164,7 @@ class Trace
         $runInfo  = '<ul>' . $errorInfo . $dbLog . $normalInfo . '</ul>';
         $runInfo  = ($runInfo == '<ul></ul>') ? '运行正常' : $runInfo;
         $args     = array($timeUsage, $memUsage ,$currentFile, $moduleDir, $tplDir, $classes, $runInfo);
-        $template = G(INC_PATH . 'TraceTemplate.php', false);
+        $template = G(C('PAGE_TRACE'), false);
         $output   = str_replace('_PERCENT_', '%', vsprintf($template, $args));
         return $output;
     }
@@ -193,7 +193,9 @@ class Trace
                     array_push($args, gettype($arg));
                 }
             }
-            $result[] = "#{$dbgIndex} " . $dbgInfo['file'] . " (line {$dbgInfo['line']}) -> {$dbgInfo['function']}( " . join(",", $args) . " )";
+            $result[] = "#{$dbgIndex} " . $dbgInfo['file'] 
+                        . " (line {$dbgInfo['line']}) -> {$dbgInfo['function']}( " 
+                        . join(",", $args) . " )";
         }
         if ($array)
             return $result;
@@ -205,20 +207,32 @@ class Trace
 
     /**
      * 错误捕获方法
+     * 
      * @param  int    $errno   错误号
      * @param  string $errstr  错误字符串
      * @param  string $errfile 错误文件
      * @param  int    $errline 错误行数
+     * 
      * @return void
      */
-    static function errorHandler($errno, $errstr, $errfile, $errline) {
+    static function errorHandler($errno, $errstr, $errfile, $errline) 
+    {
         self::error($errno, $errstr, $errfile, $errline);
-        if ($errno == E_RECOVERABLE_ERROR or $errno == E_PARSE or $errno == E_USER_ERROR) {
+        if ($errno == E_RECOVERABLE_ERROR 
+                or $errno == E_PARSE 
+                or $errno == E_USER_ERROR) {
             $args = func_get_args();
             array_shift($args);
-            $tmp = vsprintf(G(INC_PATH . 'errorTemplate.php', false), $args);
+            $tmp = vsprintf(G(C('PAGE_ERROR'), false), $args);
             if (Request::isAjax())
-                exit(data2json(array( 'info' => '系统出错', 'data' => array( 'info' => $errstr, 'file' => $errfile, 'line' => $errline ) )));
+                exit(data2json(array( 
+                                'info' => '系统出错', 
+                                'data' => array( 
+                                           'info' => $errstr, 
+                                           'file' => $errfile, 
+                                           'line' => $errline,
+                                          )
+                               )));
             exit($tmp);
         }
     }
@@ -228,7 +242,8 @@ class Trace
      *
      * @return void
      */
-    static function shutdownHandler() {
+    static function shutdownHandler() 
+    {
         $errorInfo = error_get_last();
         if (!empty($errorInfo))
             call_user_func_array(array('Trace','errorHandler'), $errorInfo);
@@ -239,7 +254,8 @@ class Trace
      * @param  object $exception 异常对象
      * @return void
      */
-    static function exceptionHandler($exception) {
+    static function exceptionHandler($exception) 
+    {
         //Trace模板
         $traceLine = "<li class='%s'><span>#%s</span><span title='函数'>%s(%s)</span> <span title='文件位置'>%s : %s</span></li>";
         $msg       = "出错啦！: '%s' 类出现 '%s' 异常. 位置:%s:%s\nStack trace:\n%s\n  thrown in %s on line %s";
@@ -257,65 +273,24 @@ class Trace
             $exception->getFile(),
             $exception->getLine()
         );
+        $args = array(
+                 $exception->getMessage(), 
+                 $exception->getFile(), 
+                 $exception->getLine(), 
+                 $traceInfo,
+                );
         error_log($msg);
-        $tmp = <<<DOLR
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>出错啦！</title>
-            <style>
-            *{margin:0;padding: 0;}
-            body{font: 12px/1.5em Consolas,'Microsoft YaHei',Arial,"Microsoft Sans Serif"; background: #999;color: #000;}
-            #dolr-container{border-radius: 5px;-webkit-box-shadow: 2px 5px 12px #555;box-shadow: 2px 5px 12px #555;padding: 20px;width:60%;background-color: white;color: black;line-height: 1.5em;margin: auto;min-width: 200px;margin-top: 50px;}
-            .header{border-bottom: 1px solid #efefef;padding: 10px 0;}
-            .footer{border-top: 1px solid #efefef;padding: 6px 0 0; color: #999;}
-            .content{padding: 6px 0;}
-            .content .errorString{word-break:break-all;}
-            .content .errorString .t{width:50px;display: inline-block;}
-            .content .trace{margin:5px 0;padding: 5px 0; border-top: 1px solid #efefef;}
-            .content .trace ul li{list-style: none; position: relative;}
-            .content .trace ul li.even{background: #f5f5f5;}
-            .content .trace ul li span{margin-right: 10px;}
-            .header h1{font-size: 27px;font-weight: normal;}
-            .tright{text-align: right;}
-            </style>
-        </head>
-        <body>
-            <div id="dolr-container">
-                <div class="header">
-                    <h1>异常!</h1>
-                </div>
-                <div class="content">
-                    <div class="errorString">
-                        <p><span class="t">消息：</span>{$exception->getMessage()}</p>
-                        <p><span class="t">文件：</span>{$exception->getFile()}</p>
-                        <p><span class="t">位置：</span>第 {$exception->getLine()} 行</p>
-                    </div>
-                    <div class="trace">
-                        <ul>
-                           {$traceInfo}
-                        </ul>
-                    </div>
-                </div>
-                <div class="footer">
-                    <div class="tright">&lt;?php define( 'DolrPHP' , 'LESS IS MORE.' ); ?&gt;</div>
-                </div>
-            </div>
-        </body>
-        </html>
-DOLR;
+        $tmp = vsprintf(G(C('PAGE_EXCEPTION'), false), $args);
         if (Request::isAjax())
             exit(data2json(
                 array(
-                     'info' => '系统出错',
-                     'data' => array(
-                         'info' => $exception->getMessage(),
-                         'file' => $exception->getFile(),
-                         'line' => $exception->getLine()
-                     )
-                )
-            )
-            );
+                 'info' => '系统出错',
+                 'data' => array(
+                            'info' => $exception->getMessage(),
+                            'file' => $exception->getFile(),
+                            'line' => $exception->getLine()
+                           )
+                )));
         exit($tmp);
     }
 } // END class Trace

@@ -25,9 +25,10 @@ defined('APP_PATH')  or define('APP_PATH', $dirOfScriptName . '/');
 defined('DOLR_PATH') or define('DOLR_PATH', $dirOfLocal . '/');
 
 //dirs
-define('DB_PATH', DOLR_PATH . 'Db/');       //DolrPHP 数据库驱动目录
-define('EXT_PATH', DOLR_PATH . 'Ext/');     //DolrPHP 框架拓展目录
-define('INC_PATH', DOLR_PATH . 'Inc/');     //DolrPHP 基础文件目录
+define('DB_PATH', DOLR_PATH . 'Dao/');       //DolrPHP 数据库驱动目录
+define('EXT_PATH', DOLR_PATH . 'Extension/');     //DolrPHP 框架拓展目录
+define('INC_PATH', DOLR_PATH . 'Include/');     //DolrPHP 基础文件目录
+define('TPL_PATH', DOLR_PATH . 'Template/');     //DolrPHP 基础文件目录
 define('IS_CGI', substr(PHP_SAPI, 0, 3) == 'cgi' ? 1 : 0);
 define('IS_WIN', strstr(PHP_OS, 'WIN') ? 1 : 0);
 define('IS_CLI', PHP_SAPI == 'cli' ? 1 : 0);
