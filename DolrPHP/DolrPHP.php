@@ -46,7 +46,6 @@ register_shutdown_function(array('Trace','shutdownHandler'));
 set_exception_handler(array('Trace','exceptionHandler'));
 //强制输出编码为UTF-8
 header('Content-Type: text/html; charset=utf-8');
-
 //自动转义
 define('MAGIC_QUOTES_GPC',get_magic_quotes_gpc());
 //关闭自动转义

@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架
  *
- * @package     DolrPHP.Base
+ * @package     DolrPHP
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
@@ -96,73 +96,81 @@ class Controller
      *
      * @return void
      */
-    public function display($tplPath = '', $cacheId = NULL)
+    public function display($tplPath = '', $cacheId = null)
     {
-        if (C('VIEW_ENGINE_ON')) {
-            $suffix = strval(C('VIEW_SUFFIX'));
-            //如果没有传入的话
-            if ($tplPath == '') {
-                $Controller  = App::$ControllerName;
-                $action  = App::$actionName;
-                $tplPath = strtolower("{$Controller}/{$action}.{$suffix}");
-            }
-            //如果不是一个具体的文件路径
-            if (!file_exists($tplPath)) {
-                if (!stripos($tplPath, ".{$suffix}")) { //没有加后缀的话
-                    $tplPath .= ".{$suffix}";
-                }
-                $tplPath = C('VIEW_STYLE') . $tplPath;
-            }
-            $this->_log($tplPath, 'tpl');
-            App::$tplEngine->display($tplPath, $cacheId = NULL);
-        } else {
+        if (!C('VIEW_ENGINE_ON')) {
             $this->_error('未开启DolrView模板引擎，如需使用请配置"DOLRVIEW" => true',1);
+        }
+        $suffix = strval(C('VIEW_SUFFIX'));
+        //如果没有传入的话
+        if ($tplPath == '') {
+            $Controller  = App::$ControllerName;
+            $action  = App::$actionName;
+            $tplPath = strtolower("{$Controller}/{$action}.{$suffix}");
+        }
+
+        //如果不是一个具体的文件路径，加上后缀
+        if (!file_exists($tplPath)) {
+            if (!stripos($tplPath, ".{$suffix}")) { //没有加后缀的话
+                $tplPath .= ".{$suffix}";
+            }
+            $tplPath = C('VIEW_STYLE') . $tplPath;
+        }
+
+        if (!file_exists($tplPath)) {
+            throw new DolrException("模板文件'{$tplPath}'不存在！");
+        }
+        $this->_log($tplPath, Trace::LOG_TYPE_TEMPLATE);
+        try {
+            App::$tplEngine->display($tplPath, $cacheId = null);
+        } catch (DolrException $e) {
+            throw $e;
         }
     }
 
     /**
      * 重定向
      *
-     * @param  string $url 完整的URL
+     * @param string $url 完整的URL
      *
      * @return void
      */
     public function go($url)
     {
-        if (headers_sent())
+        if (headers_sent()) {
             echo '<script>window.location.href="' . $url . '";</script>';
-        else
+        } else {
             header('Location:' . $url);
+        }
     }
 
 
     /**
      * 404错误
      *
-     * @param string error info
+     * @param string $string error info
      *
      * @return void
      */
     public function error404($string = '')
     {
         send_http_status(404);
-        if (C('VIEW_ENGINE_ON')) {
-            $this->set('errorInfo', $string);
-            $this->display(C('PAGE_404'));
-        } else {
+        if (!C('VIEW_ENGINE_ON')) {
             trigger_error($string);
         }
+        $this->set('errorInfo', $string);
+        $this->display(C('PAGE_404'));
     }
 
     /**
      * log
      *
-     * @param string $string log info
-     * @param string $type   log type
+     * @param string  $string log info
+     * @param integer $type   log type
      *
      * @return void
      */
-    private function _log($string, $type = 'error')
+    private function _log($string, $type = Trace::LOG_TYPE_ERROR)
     {
         Trace::L($string, $type);
     }
@@ -176,7 +184,7 @@ class Controller
      */
     private function _error($errorInfo)
     {
-        throw new DolrException($errorInfo, 1);
+        throw new DolrException($errorInfo);
     }
 
 }// END class Controller

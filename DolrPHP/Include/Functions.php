@@ -26,15 +26,17 @@ function dolrAutoLoader($className)
     } elseif (false !== stripos($className, 'Db_')) { //DB
         include DB_PATH . str_replace('_', '/', substr($className, 3)) . '.php';
     } else {
-        trigger_error('类"' . $className . '"无法加载，文件不存在或名称错误.');
+        throw new DolrException('类"' . $className . '"无法加载，文件不存在或名称错误.');
     }
-    Trace::L($className, 'class');
+    Trace::L($className, Trace::LOG_TYPE_CLASS);
 }
 
 /**
  * 获取和设置配置项
+ *
  * @param string $key
  * @param mixed  $value
+ *
  * @return mixed
  */
 function C($key, $value = null)
@@ -48,7 +50,9 @@ function C($key, $value = null)
 
 /**
  * 实例化模型类
+ *
  * @param string $model 模型名
+ *
  * @return object
  */
 function M($model)
@@ -63,9 +67,11 @@ function M($model)
 
 /**
  * 写文件
+ *
  * @param string              $path        目标路径
  * @param string|array|object $content     内容
  * @param bool                $serialized  是否json格式化
+ *
  * @return  void
  */
 function W($path, $content, $serialized = true)
@@ -101,7 +107,9 @@ function G($path, $serialized = true)
 
 /**
  * 生成带前缀的表名
+ *
  * @param string $tableName 不带前缀的表名
+ *
  * @return string
  */
 function T($tableName)
@@ -121,29 +129,20 @@ function V()
 
 
 /**
- * Url生成方法
+ * 生成URL
  *
- * @param string $handy  模块名/方法名
+ * @param string $alias  模块名/方法名
  * @param array  $params 其它参数
+ *
  * @return string
  */
-function U($handy = '', $params = array())
+function U($alias = '', $params = array())
 {
-    $tmp    = explode('/', $handy == '' ? 'Index/index' : $handy);
+    $tmp    = explode('/', $alias == '' ? 'Index/index' : $alias);
     $module = trim(array_shift($tmp));
     $action = trim(end($tmp));
 
-    return Router::url($module, $action, $params);
-}
-
-/**
- * 抛出异常
- * @param  string $string 消息
- * @return void
- */
-function exception($string)
-{
-    throw new DolrException($string, 1);
+    return Dispather::generateUrl($module, $action, $params);
 }
 
 /**
@@ -166,7 +165,7 @@ function display($data = array(), $tplPath = '', $extract = true)
     if (!stripos($tplPath, '.php')) //没有加后缀的话
         $tplPath .= '.php';
     if ($extract) extract($data); //提取为独立变量
-    Trace::L(C('VIEW_PATH') . $tplPath, 'tpl');
+    Trace::L(C('VIEW_PATH') . $tplPath, Trace::LOG_TYPE_TEMPLATE);
     include C('VIEW_PATH') . $tplPath;
 }
 
@@ -219,24 +218,6 @@ function session($name = null, $value = null)
 }
 
 /**
- * 导入应用拓展文件
- * @desc DE:框架的Ext目录，AE:应用拓展目录
- *
- * @param $file
- */
-function import($file)
-{
-    if (false !== strpos($file, 'AE:') or false !== strpos($file, 'DE:'))
-        $file = strtr(trim($file, '/\\'), array( 'AE:' => C('EXTENSION_PATH'), 'DE:' => EXT_PATH, '\\' => '/' ));
-    $file .= '.php';
-    if (file_exists($file)) {
-        include $file;
-    } else {
-        Trace::L('无法加载文件: ' . $file, 'error');
-    }
-}
-
-/**
  * ================= 以下为其它辅助函数 ===================
  */
 /**
@@ -261,13 +242,16 @@ function makeDir($path, $mode = 0755)
  */
 function delDir($dir)
 {
-    if (!file_exists($dir)) return true;
-    if (!is_dir($dir) || is_link($dir)) return unlink($dir);
+    if (!file_exists($dir))
+        return true;
+    if (!is_dir($dir) || is_link($dir))
+        return unlink($dir);
     foreach (scandir($dir) as $item) {
         if ($item == '.' || $item == '..') continue;
         if (!delDir($dir . '/' . $item)) {
             chmod($dir . '/' . $item, 0777);
-            if (!delDir($dir . '/' . $item)) return false;
+            if (!delDir($dir . '/' . $item))
+                return false;
         }
     }
 
@@ -298,28 +282,13 @@ function byte_format($size, $dec = 2)
 /**
  * 获取客户端IP地址
  *
- * @param  boolean    $tolong 是否转换为整型
+ * @param boolean $toLong 是否转换为整型
  *
  * @return int
  */
-function get_ip($tolong = false)
+function getIp($toLong = false)
 {
-    $ip = null;
-    if ($ip !== null) return $ip;
-    if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $arr = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-        $pos = array_search('unknown', $arr);
-        if (false !== $pos) unset($arr[$pos]);
-        $ip = trim($arr[0]);
-    } elseif (isset($_SERVER['HTTP_CLIENT_IP'])) {
-        $ip = $_SERVER['HTTP_CLIENT_IP'];
-    } elseif (isset($_SERVER['REMOTE_ADDR'])) {
-        $ip = $_SERVER['REMOTE_ADDR'];
-    }
-
-    // IP地址合法验证
-    return (false !== ip2long($ip)) ? (bool )$tolong ? ip2long($ip) : $ip : '0.0.0.0';
-
+    return Http::getIp($toLong);
 }
 
 /**
@@ -443,27 +412,9 @@ function msubstr($str, $start = 0, $length = 100, $suffix = true, $charset = "ut
  *
  * @return void
  */
-function send_http_status($code)
+function sendHttpStatus($code)
 {
-    static $_status = array(
-        // Success 2xx
-        200 => 'OK',
-        // Redirection 3xx
-        301 => 'Moved Permanently',
-        302 => 'Moved Temporarily ', // 1.1
-        // Client Error 4xx
-        400 => 'Bad Request',
-        403 => 'Forbidden',
-        404 => 'Not Found',
-        // Server Error 5xx
-        500 => 'Internal Server Error',
-        503 => 'Service Unavailable',
-    );
-    if (isset($_status[$code])) {
-        header('HTTP/1.1 ' . $code . ' ' . $_status[$code]);
-        // 确保FastCGI模式下正常
-        header('Status:' . $code . ' ' . $_status[$code]);
-    }
+    Http::sendHttpStatus($code);
 }
 
 /**
@@ -473,7 +424,7 @@ function send_http_status($code)
  *
  * @return string
  */
-function strip_whitespace($content)
+function stripWhitespace($content)
 {
     $stripStr = '';
     //分析php源码
@@ -529,146 +480,6 @@ function strip_whitespace($content)
  */
 function remove_xss($val)
 {
-    $val    = preg_replace('/([\x00-\x08,\x0b-\x0c,\x0e-\x19])/', '', $val);
-    $search = 'abcdefghijklmnopqrstuvwxyz';
-    $search .= 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $search .= '1234567890!@#$%^&*()';
-    $search .= '~`";:?+/={}[]-_|\'\\';
-    for ($i = 0; $i < strlen($search); $i++) {
-        $val = preg_replace('/(&#[xX]0{0,8}' . dechex(ord($search[$i])) . ';?)/i', $search[$i], $val); // with a ;
-        $val = preg_replace('/(&#0{0,8}' . ord($search[$i]) . ';?)/', $search[$i], $val); // with a ;
-    }
-    $ra1 = array(
-            'javascript',
-            'vbscript',
-            'expression',
-            'applet',
-            'meta',
-            'xml',
-            'blink',
-            'link',
-            'style',
-            'script',
-            'embed',
-            'object',
-            'iframe',
-            'frame',
-            'frameset',
-            'ilayer',
-            'layer',
-            'bgsound',
-            'title',
-            'base'
-           );
-    $ra2 = array(
-            'onabort',
-            'onactivate',
-            'onafterprint',
-            'onafterupdate',
-            'onbeforeactivate',
-            'onbeforecopy',
-            'onbeforecut',
-            'onbeforedeactivate',
-            'onbeforeeditfocus',
-            'onbeforepaste',
-            'onbeforeprint',
-            'onbeforeunload',
-            'onbeforeupdate',
-            'onblur',
-            'onbounce',
-            'oncellchange',
-            'onchange',
-            'onclick',
-            'oncontextmenu',
-            'oncontrolselect',
-            'oncopy',
-            'oncut',
-            'ondataavailable',
-            'ondatasetchanged',
-            'ondatasetcomplete',
-            'ondblclick',
-            'ondeactivate',
-            'ondrag',
-            'ondragend',
-            'ondragenter',
-            'ondragleave',
-            'ondragover',
-            'ondragstart',
-            'ondrop',
-            'onerror',
-            'onerrorupdate',
-            'onfilterchange',
-            'onfinish',
-            'onfocus',
-            'onfocusin',
-            'onfocusout',
-            'onhelp',
-            'onkeydown',
-            'onkeypress',
-            'onkeyup',
-            'onlayoutcomplete',
-            'onload',
-            'onlosecapture',
-            'onmousedown',
-            'onmouseenter',
-            'onmouseleave',
-            'onmousemove',
-            'onmouseout',
-            'onmouseover',
-            'onmouseup',
-            'onmousewheel',
-            'onmove',
-            'onmoveend',
-            'onmovestart',
-            'onpaste',
-            'onpropertychange',
-            'onreadystatechange',
-            'onreset',
-            'onresize',
-            'onresizeend',
-            'onresizestart',
-            'onrowenter',
-            'onrowexit',
-            'onrowsdelete',
-            'onrowsinserted',
-            'onscroll',
-            'onselect',
-            'onselectionchange',
-            'onselectstart',
-            'onstart',
-            'onstop',
-            'onsubmit',
-            'onunload'
-           );
-    $ra  = array_merge($ra1, $ra2);
-
-    $found = true; // keep replacing as long as the previous round replaced something
-    while ($found == true) {
-        $val_before = $val;
-        for ($i = 0; $i < sizeof($ra); $i++) {
-            $pattern = '/';
-            for ($j = 0; $j < strlen($ra[$i]); $j++) {
-                if ($j > 0) {
-                    $pattern .= '(';
-                    $pattern .= '(&#[xX]0{0,8}([9ab]);)';
-                    $pattern .= '|';
-                    $pattern .= '|(&#0{0,8}([9|10|13]);)';
-                    $pattern .= ')*';
-                }
-                $pattern .= $ra[$i][$j];
-            }
-            $pattern .= '/i';
-            // add in <> to nerf the tag
-            $replacement = substr($ra[$i], 0, 2) . '<x>' . substr($ra[$i], 2);
-            // filter out the hex tags
-            $val = preg_replace($pattern, $replacement, $val);
-            if ($val_before == $val) {
-                // no replacements were made, so exit the loop
-                $found = false;
-            }
-        }
-    }
-
-    return $val;
+    return Request::removeXSS($val);
 }
 

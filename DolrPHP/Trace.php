@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架
  *
- * @package     DolrPHP.Base
+ * @package     DolrPHP
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
@@ -19,6 +19,13 @@
  **/
 class Trace
 {
+    /**
+     * log type
+     */
+    const LOG_TYPE_CLASS    = 1;
+    const LOG_TYPE_TEMPLATE = 2;
+    const LOG_TYPE_ERROR    = 3;
+
     /**
      * 初始时间
      *
@@ -52,7 +59,7 @@ class Trace
      *
      * @var array
      */
-    public static $loadedClasses = array('App','Trace');
+    public static $loadedClasses = array('App','Trace','Dispather');
 
     /**
      * 错误信息
@@ -82,12 +89,19 @@ class Trace
      */
     public static $tplName = '';
 
+
+    public static function initialize()
+    {
+        # code...
+    }
+
     /**
      * 开始记录
      *
      * @return void
      */
-    public static function start() {
+    public static function start()
+    {
         self::$startTime   = microtime(true);
         self::$startMemory = memory_get_usage();
     }
@@ -97,12 +111,24 @@ class Trace
      *
      * @return void
      */
-    public static function end() {
+    public static function end()
+    {
         self::$endTime   = microtime(true);
         self::$endMemory = memory_get_usage();
     }
 
-    public static function error($errorType, $errstr, $errfile, $errline) {
+    /**
+     * error record
+     *
+     * @param integer $errorType error type
+     * @param string  $errorString    error info
+     * @param string  $errorFile   file name
+     * @param integer $errorLine   line number
+     *
+     * @return void
+     */
+    public static function error($errorType, $errorString, $errorFile, $errorLine)
+    {
         $errTypes  = array(
             E_WARNING           => '运行警告',
             E_PARSE             => '语法错误',
@@ -121,16 +147,19 @@ class Trace
 
     /**
      * 日志记录
+     *
+     * @return void
      */
-    public static function L($value, $type = 'error') {
+    public static function L($value, $type = self::LOG_TYPE_ERROR)
+    {
         switch ($type) {
-            case 'class':
+            case self::LOG_TYPE_CLASS:
                 array_push(self::$loadedClasses, $value);
                 break;
-            case 'tpl':
+            case self::LOG_TYPE_TEMPLATE:
                 self::$tplName = $value;
                 break;
-            case 'error':
+            case self::LOG_TYPE_ERROR:
                 array_push(self::$errorInfo, $value);
             //TODO:
         }
@@ -141,13 +170,14 @@ class Trace
      *
      * @return mixed
      */
-    public static function traceInfo() {
+    public static function traceInfo()
+    {
         //time
         $timeUsage = round(self::$endTime - self::$startTime, 5);
         //memory
         $memUsage = byte_format(self::$endMemory - self::$startMemory);
         //errofinfo
-        $errorInfo = empty(self::$errorInfo) ? '' : '<li>ERROR:' . join('</li><li>ERR:', array_reverse(self::$errorInfo)) . '</li>';
+        $errorInfo = empty(self::$errorInfo) ? '' : '<li>ERROR:' . join('</li><li>ERROR:', array_reverse(self::$errorInfo)) . '</li>';
         //normalInfo
         $normalInfo = empty(self::$normalInfo) ? '' : '<li>' . join('</li><li>', array_reverse(self::$normalInfo)) . '</li>';
         //dbLog
@@ -163,20 +193,30 @@ class Trace
         $classes  = '<ol><li>' . join('</li><li>', self::$loadedClasses) . '</li></ol>';
         $runInfo  = '<ul>' . $errorInfo . $dbLog . $normalInfo . '</ul>';
         $runInfo  = ($runInfo == '<ul></ul>') ? '运行正常' : $runInfo;
-        $args     = array($timeUsage, $memUsage ,$currentFile, $moduleDir, $tplDir, $classes, $runInfo);
-        $template = G(C('PAGE_TRACE'), false);
-        $output   = str_replace('_PERCENT_', '%', vsprintf($template, $args));
-        return $output;
+        $args     = array(
+                     '[TIME_USAGE]'   => $timeUsage,
+                     '[MEM_USAGE]'    => $memUsage,
+                     '[CURRENT_FILE]' => $currentFile,
+                     '[MODULE_DIR]'   => $moduleDir,
+                     '[TEMPLATE_DIR]' => $tplDir,
+                     '[CLASSES]'      => $classes,
+                     '[RUN_INFO]'     => $runInfo
+                    );
+        $html = G(C('PAGE_TRACE'), false);
+        $html = str_replace(array_keys($args), $args, $html);
+
+        return $html;
     }
 
     /**
      * Trace格式化
      *
-     * @param $dbgTrace
-     * @param $array
+     * @param array $dbgTrace trace info
+     * @param array $retArray    return array
+     *
      * @return string
      */
-    static function traceFormat($dbgTrace, $array = FALSE) {
+    public static function traceFormat($dbgTrace, $retArray = FALSE) {
         $result = array();
         foreach ($dbgTrace as $dbgIndex => $dbgInfo) {
             $args = array();
@@ -193,8 +233,8 @@ class Trace
                     array_push($args, gettype($arg));
                 }
             }
-            $result[] = "#{$dbgIndex} " . $dbgInfo['file'] 
-                        . " (line {$dbgInfo['line']}) -> {$dbgInfo['function']}( " 
+            $result[] = "#{$dbgIndex} " . $dbgInfo['file']
+                        . " (line {$dbgInfo['line']}) -> {$dbgInfo['function']}( "
                         . join(",", $args) . " )";
         }
         if ($array)
@@ -207,33 +247,35 @@ class Trace
 
     /**
      * 错误捕获方法
-     * 
-     * @param  int    $errno   错误号
-     * @param  string $errstr  错误字符串
-     * @param  string $errfile 错误文件
-     * @param  int    $errline 错误行数
-     * 
+     *
+     * @param  int    $errorNo   错误号
+     * @param  string $errorString  错误字符串
+     * @param  string $errorFile 错误文件
+     * @param  int    $errorLine 错误行数
+     *
      * @return void
      */
-    static function errorHandler($errno, $errstr, $errfile, $errline) 
+    public static function errorHandler($errorNo, $errorString, $errorFile, $errorLine)
     {
-        self::error($errno, $errstr, $errfile, $errline);
-        if ($errno == E_RECOVERABLE_ERROR 
-                or $errno == E_PARSE 
-                or $errno == E_USER_ERROR) {
-            $args = func_get_args();
-            array_shift($args);
-            $tmp = vsprintf(G(C('PAGE_ERROR'), false), $args);
+        self::error($errorNo, $errorString, $errorFile, $errorLine);
+        if ($errorNo == E_RECOVERABLE_ERROR or $errorNo == E_PARSE or $errorNo == E_USER_ERROR) {
+            $args = array(
+                     '[MESSAGE]'  => $errorString,
+                     '[FILENAME]' => $errorFile,
+                     '[LINE]'     => $errorLine
+                    );
+            $html = G(C('PAGE_ERROR'), false);
+            $html = str_replace(array_keys($args), $args, $html);
             if (Request::isAjax())
-                exit(data2json(array( 
-                                'info' => '系统出错', 
-                                'data' => array( 
-                                           'info' => $errstr, 
-                                           'file' => $errfile, 
-                                           'line' => $errline,
+                exit(data2json(array(
+                                'info' => '系统出错',
+                                'data' => array(
+                                           'info' => $errorString,
+                                           'file' => $errorFile,
+                                           'line' => $errorLine,
                                           )
                                )));
-            exit($tmp);
+            exit($html);
         }
     }
 
@@ -242,7 +284,7 @@ class Trace
      *
      * @return void
      */
-    static function shutdownHandler() 
+    public static function shutdownHandler()
     {
         $errorInfo = error_get_last();
         if (!empty($errorInfo))
@@ -251,36 +293,41 @@ class Trace
 
     /**
      * 异常处理方法
+     *
      * @param  object $exception 异常对象
+     *
      * @return void
      */
-    static function exceptionHandler($exception) 
+    public static function exceptionHandler($exception)
     {
         //Trace模板
-        $traceLine = "<li class='%s'><span>#%s</span><span title='函数'>%s(%s)</span> <span title='文件位置'>%s : %s</span></li>";
-        $msg       = "出错啦！: '%s' 类出现 '%s' 异常. 位置:%s:%s\nStack trace:\n%s\n  thrown in %s on line %s";
+        $traceLine = "<li class='%s'><span>#%s</span><span title='函数'>%s(%s)</span>
+                        <span title='文件位置'>%s : %s</span></li>";
+        $msg       = "出错啦！: '%s' 类出现 '%s' 异常.
+                        位置:%s:%s\nStack trace:\n%s\n  thrown in %s on line %s";
         // trace
         $dbgTrace  = array_reverse($exception->getTrace());
         $traceInfo = self::traceFormat($dbgTrace);
         //格式化msg
         $msg = sprintf(
-            $msg,
-            get_class($exception),
-            $exception->getMessage(),
-            $exception->getFile(),
-            $exception->getLine(),
-            join("\n", $traceInfo),
-            $exception->getFile(),
-            $exception->getLine()
-        );
+                    $msg,
+                    get_class($exception),
+                    $exception->getMessage(),
+                    $exception->getFile(),
+                    $exception->getLine(),
+                    join("\n", $traceInfo),
+                    $exception->getFile(),
+                    $exception->getLine()
+                );
         $args = array(
-                 $exception->getMessage(), 
-                 $exception->getFile(), 
-                 $exception->getLine(), 
-                 $traceInfo,
+                 '[MESSAGE]'  => $exception->getMessage(),
+                 '[FILENAME]' => $exception->getFile(),
+                 '[LINE]'     => $exception->getLine(),
+                 '[TRACE]'    => $traceInfo,
                 );
         error_log($msg);
-        $tmp = vsprintf(G(C('PAGE_EXCEPTION'), false), $args);
+        $html = G(C('PAGE_EXCEPTION'), false);
+        $html = str_replace(array_keys($args), $args, $html);
         if (Request::isAjax())
             exit(data2json(
                 array(
@@ -291,7 +338,8 @@ class Trace
                             'line' => $exception->getLine()
                            )
                 )));
-        exit($tmp);
+        exit($html);
     }
+
 } // END class Trace
 

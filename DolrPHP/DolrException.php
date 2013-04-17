@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架
  *
- * @package     DolrPHP.Base
+ * @package     DolrPHP
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
@@ -12,9 +12,9 @@
  **/
 
 /**
-* DolrTrace 
+* DolrTrace
 */
 class DolrException extends Exception
 {
-    
+
 }

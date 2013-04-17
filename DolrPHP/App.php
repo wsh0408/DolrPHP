@@ -17,6 +17,7 @@ include DOLR_PATH . 'Trace.php';
 include INC_PATH . 'Functions.php';
 //dispatcher
 include DOLR_PATH . 'Dispatcher.php';
+
 /**
  * DolrPHP应用基础类
  *
@@ -126,7 +127,7 @@ class App
         $controller = ucfirst(Dispatcher::$module . C('CONTROLLER_IDENTITY'));
         if (!class_exists($controller)) {
             self::$controller = new Controller();
-            throw new DolrException("控制器 '{$controller}' 文件不存在！", 1);
+            throw new DolrException("控制器 '{$controller}' 文件不存在！");
         }
 
         self::$controller = new $controller();
@@ -149,7 +150,11 @@ class App
             self::$controller->initialize();
         //call action
         if (is_callable(array(self::$controller, $action))) {
-            self::$controller->$action();
+            try {
+                self::$controller->$action();
+            } catch (DolrException $e) {
+                throw $e;
+            }
         } else {
             self::$controller->error404();
         }
@@ -239,7 +244,7 @@ class App
         $config = array_merge($defaultConfig, $appConfig);
         //写入配置文件到缓存
         $configFile = $config['RUNTIME_PATH'].'config/config.php';
-        if(!file_exists($configFile)
+        if( $config['DEBUG'] || !file_exists($configFile)
             || filemtime(APP_PATH . 'config.php') > filemtime($configFile)) {
 
             $content = "<?php\n return ".var_export($config, true) . ';';
@@ -267,11 +272,11 @@ class App
      * log
      *
      * @param string $string log info
-     * @param string $type   log type
+     * @param int    $type   log type
      *
      * @return void
      */
-    private static function _log($string, $type = 'error')
+    private static function _log($string, $type = Trace::LOG_TYPE_ERROR)
     {
         Trace::L($string, $type);
     }

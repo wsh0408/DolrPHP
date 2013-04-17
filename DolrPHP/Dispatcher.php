@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架
  *
- * @package     DolrPHP.Base
+ * @package     DolrPHP
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
@@ -12,7 +12,7 @@
  **/
 
 /**
- * Dispatcher类
+ * Dispatcher
  *
  * @package DolrPHP
  * @author  Joychao <Joy@Joychao.cc>
@@ -26,7 +26,7 @@ class Dispatcher
     public static $routingTable = array(
         'pattern'   => ":module/:action/*",
         'default'   => array( 'module' => 'Index', 'action' => 'index' ),
-        'reqs'      => array( 'module' => '[a-zA-Z0-9\.\-_]+', 'action' => '[a-zA-Z0-9\.\-_]+' ),
+        'reqs'      => array( 'module' => '[a-zA-Z0-9\.\-_]+', 'action' => '[a-zA-Z0-9\.\-_]+'),
         'varprefix' => ':',
         'delimiter' => '/',
         'postfix'   => '.html',
@@ -56,10 +56,11 @@ class Dispatcher
      * 初始化
      *
      * @param array $routingTable 路由表
-     * 
+     *
      * @return void
      */
-    public static function initialize(array $routingTable = array()) {
+    public static function initialize(array $routingTable = array())
+    {
         self::$routingTable = array_merge(self::$routingTable, $routingTable);
         $delimiter = self::$routingTable['delimiter'];
         $postfix   = self::$routingTable['postfix'];
@@ -113,10 +114,11 @@ class Dispatcher
      * 匹配路由表
      *
      * @param string|array $url
-     * 
+     *
      * @return void
      */
-    public static function matchingRoutingTable($url) {
+    public static function matchingRoutingTable($url)
+    {
         $ret       = self::$routingTable['default'];
         $reqs      = self::$routingTable['reqs'];
         $delimiter = self::$routingTable['delimiter'];
@@ -164,10 +166,11 @@ class Dispatcher
      * 将变量反向匹配路由表, 返回匹配后的url
      *
      * @param array $params
-     * 
+     *
      * @return string
      */
-    public static function reverseMatchingRoutingTable($params) {
+    public static function reverseMatchingRoutingTable($params)
+    {
         $url       = $params;
         $ret       = self::$routingTable['pattern'];
         $default   = self::$routingTable['default'];
@@ -215,14 +218,14 @@ class Dispatcher
         } else {
             $ret = $ret . $postfix;
         }
-        $sys_protocal = isset($_SERVER['SERVER_PORT']) 
-                        && $_SERVER['SERVER_PORT'] == '443' 
+        $sys_protocal = isset($_SERVER['SERVER_PORT'])
+                        && $_SERVER['SERVER_PORT'] == '443'
                         ? 'https://' : 'http://';
-        $sys_port     = (($_SERVER['SERVER_PORT'] == 80) 
-                        or ($_SERVER['SERVER_PORT'] == 443)) 
+        $sys_port     = (($_SERVER['SERVER_PORT'] == 80)
+                        or ($_SERVER['SERVER_PORT'] == 443))
                         ? '' : ':' . $_SERVER['SERVER_PORT'];
 
-        return $sys_protocal . $_SERVER['HTTP_HOST'] 
+        return $sys_protocal . $_SERVER['HTTP_HOST']
                 . $sys_port . '/' . ltrim($ret, '/');
     }
 
@@ -232,10 +235,11 @@ class Dispatcher
      * @param string $module 模块名
      * @param string $action 方法名
      * @param array  $args   其它参数
-     * 
+     *
      * @return string
      */
-    public static function url($module, $action, $args = array()) {
+    public static function generateUrl($module, $action, $args = array())
+    {
         $args['module'] = $module;
         $args['action'] = $action;
 

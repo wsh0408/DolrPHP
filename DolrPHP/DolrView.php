@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架
  *
- * @package     Views
+ * @package     DolrPHP
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
@@ -33,7 +33,7 @@ class DolrView
      *
      * @var array
      */
-    protected $_tpl_vars = array();
+    protected $_tplVars = array();
 
     /**
      * 模板参数信息
@@ -46,23 +46,26 @@ class DolrView
         'cache_dir'       => 'cache',
         'caching'         => false,
         'cache_lifetime'  => 3600,
-        'tpl_suffix'      => 'html',
-        'left_delimiter'  => '<{',
-        'right_delimiter' => '}>',
+        'l_tag'  => '<{',
+        'r_tag' => '}>',
     );
+
     /**
      * 替换字符串
+     *
      * @var array
      */
-    public $replace = array();
+    private $_replace = array();
 
     /**
      * 单件模式调用方法
-     * @param array $options
-     * @static
+     *
+     * @param array $options user options
+     *
      * @return object DolrView
      */
-    public static function getInstance($options = array()) {
+    public static function getInstance($options = array())
+    {
         if (!self :: $_instance instanceof self)
             self :: $_instance = new self($options);
 
@@ -74,6 +77,7 @@ class DolrView
      *
      * @param array $options = array(); 配置数组
      * @example:
+     * <pre>
      * $options = array(
      *            'template_dir'   => 'templates',
      *            'compile_dir'    => 'templates_c',
@@ -81,49 +85,55 @@ class DolrView
      *            'caching'        => false,
      *            'cache_lifetime' => 3600,
      *        );
+     * </pre>
      * $tpl = new DolrView($options);
+     *
+     * @return void
      */
-    public function __construct($options = array()) {
+    public function __construct($options = array())
+    {
         $this->setOption($options);
         //去除定界符冲突
-        $this->_options['left_delimiter']  = addcslashes($this->_options['left_delimiter'], '.*?(){}/');
-        $this->_options['right_delimiter'] = addcslashes($this->_options['right_delimiter'], '.*?(){}/');
+        $this->_options['l_tag'] = addcslashes($this->_options['l_tag'], '.*?(){}/');
+        $this->_options['r_tag'] = addcslashes($this->_options['r_tag'], '.*?(){}/');
     }
 
     /**
-     * 替换规则
+     * 获取替换规则
+     *
      * @return array
      */
-    public function getPattern() {
-        $l       = $this->_options['left_delimiter'];
-        $r       = $this->_options['right_delimiter'];
+    private function _getReplaceRules()
+    {
+        $l = $this->_options['l_tag'];
+        $r = $this->_options['r_tag'];
         $default = array(
             //去除空白
-            '/\?\>[\n\r]*\<\?/'                                                           => ' ',
+            '/\?\>[\n\r]*\<\?/'                                        => ' ',
             //变量:$varname
-            '/(' . $l . '\s*(\$.*?)\s*' . $r . ')/e'                                      => '$this->_parseVar(\'\\1\')',
+            '/([L]\s*(\$.*?)\s*[R])/e'                                 => '$this->_parseVar(\'\\1\')',
             //函数: <{:date('Y-m-d');}>
-            '/' . $l . '\s*:(\w+)\((.*?)\)(.*?)' . $r . '/'                               => '<?php echo \\1(\\2)\\3 ?>',
+            '/[L]\s*:(\w+)\((.*?)\)(.*?)[R]/'                          => '<?php echo \\1(\\2)\\3 ?>',
             //if： if $a > $b
-            '/' . $l . '\s*if\s+(.+?)\s*' . $r . '/'                                      => '<?php if(\\1): ?>',
+            '/[L]\s*if\s+(.+?)\s*[R]/'                                 => '<?php if(\\1): ?>',
             //end if
-            '/' . $l . '\s*\/if\s*' . $r . '/i'                                           => '<?php endif;?>',
+            '/[L]\s*\/if\s*[R]/i'                                      => '<?php endif;?>',
             //elseif
-            '/' . $l . '\s*elseif\s+(.+?)\s*' . $r . '/i'                                 => '<?php elseif(\\1): ?>',
+            '/[L]\s*elseif\s+(.+?)\s*[R]/i'                            => '<?php elseif(\\1): ?>',
             //else
-            '/' . $l . '\s*else\s*' . $r . '/i'                                           => '<?php else: ?>',
+            '/[L]\s*else\s*[R]/i'                                      => '<?php else: ?>',
             //loop $array $v
-            '/' . $l . '\s*loop\s+(\S+)\s+(\S+)\s*' . $r . '/'                            => '<?php if(!empty(\\1) and is_array(\\1) or is_object(\\1) ):$_i = 0; foreach(\\1 as \\2): ?>',
+            '/[L]\s*loop\s+(\S+)\s+(\S+)\s*[R]/'                       => '<?php if(!empty(\\1) and is_array(\\1) or is_object(\\1) ):$_i = 0; foreach(\\1 as \\2): ?>',
             //loop $array $k $v
-            '/' . $l . '\s*loop\s+(\S+)\s+(\S+)\s+(\S+)\s*' . $r . '/'                    => '<?php if(!empty(\\1) and is_array(\\1) or is_object(\\1) ):$_i = 0; foreach(\\1 as \\2 => \\3): ?>',
+            '/[L]\s*loop\s+(\S+)\s+(\S+)\s+(\S+)\s*[R]/'               => '<?php if(!empty(\\1) and is_array(\\1) or is_object(\\1) ):$_i = 0; foreach(\\1 as \\2 => \\3): ?>',
             //loopelse
-            '/' . $l . '\s*loopelse\s*' . $r . '(.*?)' . $l . '\s*\/loop\s*' . $r . '/is' => '<?php $_i++; endforeach; else: ?>\\1<?php endif;?>',
+            '/[L]\s*loopelse\s*[R](.*?)[L]\s*\/loop\s*[R]/is'          => '<?php $_i++; endforeach; else: ?>\\1<?php endif;?>',
             //end loop
-            '/' . $l . '\s*\/loop\s*' . $r . '/i'                                         => '<?php endforeach;endif;?>',
+            '/[L]\s*\/loop\s*[R]/i'                                    => '<?php endforeach;endif;?>',
             //cycle 'red','blue'
-            '/' . $l . '\s*cycle\s+(\'|\")(\S+)\\1\s*,\s*\\1(\S+)\\1\s*' . $r . '/s'      => '<?php if($_i%2): echo \'\\3\';else: echo \'\\2\';endif;?>',
+            '/[L]\s*cycle\s+(\'|\")(\S+)\\1\s*,\s*\\1(\S+)\\1\s*[R]/s' => '<?php if($_i%2): echo \'\\3\';else: echo \'\\2\';endif;?>',
             //$varname.title
-            '/<\?php(.*?)(\$[\w]+(\.[\w]+)+)(.*?)\?>/es'                                  => '\'<?php \\1\'.$this->_parsePoint(\'\\2\').\'\\4?>\';',
+            '/<\?php(.*?)(\$[\w]+(\.[\w]+)+)(.*?)\?>/es'               => '\'<?php \\1\'.$this->_parsePoint(\'\\2\').\'\\4?>\';',
         );
 
         return $default;
@@ -132,34 +142,42 @@ class DolrView
     /**
      * 设置参数
      *
-     * @param array $options
+     * @param array $options options
+     *
+     * @return void
      */
-    public function setOption($options) {
+    public function setOption($options)
+    {
         $this->_options = array_merge($this->_options, $options);
     }
 
     /**
      * 分配变量到模板
      *
-     * @param  string $varName  变量名
-     * @param  mixed  $varValue 变量值
+     * @param string $varName  变量名
+     * @param mixed  $varValue 变量值
+     *
+     * @return void
      */
-    public function set($varName, $varValue) {
-        $this->_tpl_vars[$varName] = &$varValue;
+    public function set($varName, $varValue)
+    {
+        $this->_tplVars[$varName] = &$varValue;
     }
 
     /**
      * 渲染并输出到页面
      *
-     * @param  string $tplFileName 模板文件名
-     * @param  mixed  $cacheId     缓存ID
+     * @param string $tplFileName 模板文件名
+     * @param mixed  $cacheId     缓存ID
+     *
      * @return void
      */
-    public function display($tplFileName, $cacheId = NULL) {
+    public function display($tplFileName, $cacheId = NULL)
+    {
         $cacheId     = is_null($cacheId) ? $_SERVER['REQUEST_URI'] : $cacheId;
         $tplFilePath = $this->_getTplPath($tplFileName);
         //模板变量
-        extract($this->_tpl_vars);
+        extract($this->_tplVars);
         //内置变量
         extract($this->_getSystemVars($tplFileName)); //系统变量
         //启用缓存
@@ -179,11 +197,13 @@ class DolrView
     /**
      * 渲染并提取内容
      *
-     * @param  string $tplFileName 模板文件名
-     * @param  mixed  $cacheId     缓存ID
+     * @param string $tplFileName 模板文件名
+     * @param mixed  $cacheId     缓存ID
+     *
      * @return string 渲染后的html
      */
-    public function fetch($tplFileName, $cacheId = NULL) {
+    public function fetch($tplFileName, $cacheId = NULL)
+    {
         ob_start();
         $this->display($tplFileName, $cacheId = NULL);
         $cacheContent = ob_get_contents();
@@ -195,10 +215,12 @@ class DolrView
     /**
      * 清除模板缓存
      *
-     * @param  string $tplFileName = '' 模板文件名，不传入则删除所有缓存
+     * @param string $tplFileName 模板文件名，不传入则删除所有缓存
+     *
      * @return boolean 成功或者失败
      */
-    public function clearCache($tplFileName = '', $cacheId = NULL) {
+    public function clearCache($tplFileName = '', $cacheId = NULL)
+    {
         $cacheId = is_null($cacheId) ? $_SERVER['REQUEST_URI'] : $cacheId;
         if (!empty($tplFileName)) {
             $cacheFile = $this->_getCachePath($tplFileName, $cacheId);
@@ -217,11 +239,13 @@ class DolrView
     /**
      * 检测是否缓存了指定模板文件
      *
-     * @param  string  $tplFileName  模板文件名
-     * @param  string  $cacheId      缓存ID
+     * @param string $tplFileName 模板文件名
+     * @param string $cacheId     缓存ID
+     *
      * @return boolean
      */
-    public function isCached($tplFileName, $cacheId = NULL) {
+    public function isCached($tplFileName, $cacheId = NULL)
+    {
         $tplFilePath = $this->_getTplPath($tplFileName);
         $cacheId     = is_null($cacheId) ? $_SERVER['REQUEST_URI'] : $cacheId;
         $cacheFile   = $this->_getCachePath($tplFileName, $cacheId);
@@ -233,10 +257,13 @@ class DolrView
 
     /**
      * 获取内置变量
+     *
      * @param string $tplFileName 模板文件名
+     *
      * @return array
      */
-    protected function _getSystemVars($tplFileName) {
+    protected function _getSystemVars($tplFileName)
+    {
         //内置变量
         $_sysVars                     = array();
         $_sysVars['Dolr']['now']      = time();
@@ -259,10 +286,12 @@ class DolrView
     /**
      * 获取模板文件路径
      *
-     * @param  string $tplFileName 模板文件
+     * @param string $tplFileName 模板文件
+     *
      * @return string              文件名
      */
-    protected function _getTplPath($tplFileName) {
+    protected function _getTplPath($tplFileName)
+    {
         if (file_exists($tplFileName))
             return $tplFileName;
 
@@ -271,33 +300,40 @@ class DolrView
 
     /**
      * 获取缓存的文件
+     *
      * @param  string $tplFileName 模板文件
      * @param string  $cacheId     缓存ID
+     *
      * @return string            文件名
      */
-    protected function _getCachePath($tplFileName, $cacheId) {
+    protected function _getCachePath($tplFileName, $cacheId)
+    {
         return $this->_trimPath(trim($this->_options['cache_dir'], '/') . '/' . basename($tplFileName) . '.cache.' . md5($cacheId) . '.php');
     }
 
     /**
      * 获取编译的文件名
      *
-     * @param  string $tplFileName 模板文件
-     * @param string  $cacheId     缓存ID
+     * @param string $tplFileName 模板文件
+     * @param string $cacheId     缓存ID
+     *
      * @return string            文件名
      */
-    protected function _getCompilePath($tplFileName, $cacheId) {
+    protected function _getCompilePath($tplFileName, $cacheId)
+    {
         return $this->_trimPath(trim($this->_options['compile_dir'], '/') . '/' . basename($tplFileName) . '.compile.php');
     }
 
     /**
      * 解析模板
      *
-     * @param  string $tplFileName 模板文件
-     * @param string  $cacheId     缓存ID
+     * @param string $tplFileName 模板文件
+     * @param string  $cacheId    缓存ID
+     *
      * @return string                  解析后的内容
      */
-    protected function _parseTpl($tplFileName, $cacheId) {
+    protected function _parseTpl($tplFileName, $cacheId)
+    {
         $tplFilePath = $this->_getTplPath($tplFileName);
         if (!file_exists($tplFilePath) or !is_readable($tplFilePath)) {
             $this->_throwException('不能打开指定的模板文件"' . $tplFilePath . '"');
@@ -305,8 +341,8 @@ class DolrView
         $content = file_get_contents($tplFilePath);
         $content = $this->replaceString(array_keys($this->replace), array_values($this->replace), $content);
         //检测包含,检测所有的include 'xxx.html'
-        $l = $this->_options['left_delimiter'];
-        $r = $this->_options['right_delimiter'];
+        $l = $this->_options['l_tag'];
+        $r = $this->_options['r_tag'];
         preg_match_all('/' . $l . '\s*include\s+[\'"]\s*(.*?)\s*[\'"]\s*' . $r . '/s', $content, $matches);
         //递归包含子模板内容
         if (!empty($matches[1])) {
@@ -321,31 +357,36 @@ class DolrView
             }
         }
         //替换
-        $content = preg_replace(array_keys($this->getPattern()), array_values($this->getPattern()), $content);
+        $content = preg_replace(array_keys($this->_getReplaceRules()), array_values($this->_getReplaceRules()), $content);
 
         return stripslashes($content);
     }
 
     /**
      * 替换字符串
-     * @param  array  $search
-     * @param  array  $replace
-     * @param  string $content
+     *
+     * @param  array  $search   target
+     * @param  array  $replace  replacement
+     * @param  string $content  content
+     *
      * @return string
      */
-    public function replaceString($search, $replace, $content) {
+    public function replaceString($search, $replace, $content)
+    {
         return str_replace($search, $replace, $content);
     }
 
     /**
      * 缓存模板文件
      *
-     * @param      string $tplFileName 模板文件
-     * @param     string  $content     模板内容
-     * @param     string  $cacheId     缓存ID
+     * @param string $tplFileName 模板文件
+     * @param string $content     模板内容
+     * @param string $cacheId     缓存ID
+     *
      * @return string
      */
-    protected function _writeCache($tplFileName, $content, $cacheId) {
+    protected function _writeCache($tplFileName, $content, $cacheId)
+    {
         $cacheFilePath = $this->_getCachePath($tplFileName, $cacheId); //保存文件名
         file_put_contents($cacheFilePath, $content);
 
@@ -355,12 +396,14 @@ class DolrView
     /**
      * 写入编译文件
      *
-     * @param  string $tplFileName 模板文件
-     * @param  string $cacheId     缓存ID
-     * @param  string $content     网页
+     * @param string $tplFileName 模板文件
+     * @param string $cacheId     缓存ID
+     * @param string $content     网页
+     *
      * @return string
      */
-    protected function _writeCompile($tplFileName, $content, $cacheId) {
+    protected function _writeCompile($tplFileName, $content, $cacheId)
+    {
         $compileFilePath = $this->_getCompilePath($tplFileName, $cacheId); //保存文件名
         if (!file_exists(dirname($compileFilePath))) {
             $this->_makeDir(dirname($compileFilePath));
@@ -374,9 +417,11 @@ class DolrView
      * 将路径修正为适合操作系统的形式
      *
      * @param string $path 路径名称
+     *
      * @return string
      */
-    protected function _trimPath($path) {
+    protected function _trimPath($path)
+    {
         return $path;
     }
 
@@ -384,9 +429,11 @@ class DolrView
      * 根据指定的路径创建不存在的文件夹
      *
      * @param string $path 路径/文件夹名称
+     *
      * @return string
      */
-    protected function _makeDir($path) {
+    protected function _makeDir($path)
+    {
         @mkdir($path, 0777, true); // > PHP5.0
         return true;
     }
@@ -394,12 +441,14 @@ class DolrView
     /**
      * 变量处理
      *
-     * @param  string $string 目标字符串
+     * @param string $string 目标字符串
+     *
      * @return string
      */
-    protected function _parseVar($string) {
-        $l           = $this->_options['left_delimiter'];
-        $r           = $this->_options['right_delimiter'];
+    protected function _parseVar($string)
+    {
+        $l           = $this->_options['l_tag'];
+        $r           = $this->_options['r_tag'];
         $pattern     = array( "/$l/", "/$r/", '/(\$\S+\|[^>\s]+);?/e' ); //$title|striptags|html2text
         $replacement = array( "<?php echo ", ' ?>', "\$this->_parseModifier('\\1');" );
 
@@ -409,10 +458,12 @@ class DolrView
     /**
      * 变量调节器的处理
      *
-     * @param  string $string 模板中匹配到的变量
-     * @return string         处理后的字符串
+     * @param string $string 模板中匹配到的变量
+     *
+     * @return string 处理后的字符串
      */
-    protected function _parseModifier($string) {
+    protected function _parseModifier($string)
+    {
         $arr     = explode('|', trim(stripslashes($string))); // $title|striptags = ###,true|html2text
         $varName = array_shift($arr);
         $tmp     = '';
@@ -443,10 +494,12 @@ class DolrView
     /**
      * 数组操作的点支持
      *
-     * @param  string $string 目标字符串
+     * @param string $string 目标字符串
+     *
      * @return string
      */
-    protected function _parsePoint($string) {
+    protected function _parsePoint($string)
+    {
         $arr     = explode('.', $string); //$a.b.c.f
         $varName = array_shift($arr); //$a
         return stripslashes($varName . '[\'' . join('\'][\'', $arr) . '\']'); //$a['b']['c']['f']
@@ -455,12 +508,14 @@ class DolrView
     /**
      * 抛出一个错误信息
      *
-     * @param string $message
-     * @param int    $line
+     * @param string $message error msg
+     * @param int    $line    error line
+     *
      * @throw Exception
+     * @return void
      */
-    protected function _throwException($message) {
-        header('Content-Type:text/html;charset=utf-8');
+    protected function _throwException($message)
+    {
         throw new Exception('DolrViews错误：' . $message);
     }
 

@@ -26,16 +26,16 @@ return array(
             'VIEW_CACHE'          => false, //模板缓存 0
             'VIEW_CACHE_LIFETIME' => 6 * 3600,  //模板缓存时间(秒)
             'VIEW_REPLACEMENT'    => array(),   //模板替换数据
-            'PAGE_404'            => TPL_PATH . '404Template.php',        //404页面 此三项都支持绝对，相对和相对模板路径
-            'PAGE_SUCCESS'        => TPL_PATH . 'SuccessTemplate.php',    //成功消息页面,相对于模板目录
-            'PAGE_ERROR'          => TPL_PATH . 'ErrorTemplate.php',      //失败消息页面
-            'PAGE_EXCEPTION'      => TPL_PATH . 'ExceptionTemplate.php',   //系统异常页面
-            'PAGE_ERROR'          => TPL_PATH . 'SysErrorTemplate.php',    //系统错误页面
-            'PAGE_TRACE'          => TPL_PATH . 'TraceTemplate.php',       //系统错误页面
+            'PAGE_404'            => TPL_PATH . '404.php',        //404页面 此三项都支持绝对，相对和相对模板路径
+            'PAGE_SUCCESS'        => TPL_PATH . 'Success.php',    //成功消息页面,相对于模板目录
+            'PAGE_ERROR'          => TPL_PATH . 'Error.php',      //失败消息页面
+            'PAGE_EXCEPTION'      => TPL_PATH . 'Exception.php',   //系统异常页面
+            'PAGE_ERROR'          => TPL_PATH . 'SysError.php',    //系统错误页面
+            'PAGE_TRACE'          => TPL_PATH . 'Trace.php',       //系统错误页面
             'AJAX_SIGN'           => false, //AJAX表单检测依据
             'DATA_CACHE_ON'       => false, //1|0
             'DATA_CACHE_TYPE'     => 1,     //1:Phps,2:Files,3:EAccelerator,4:Xcache,5:Apc
-            'COOKIE_SECRETKEY'    => '%^&DSF*=_GH-sdf52e%&3',       //cookie加密key
+            'COOKIE_SECRETKEY'    => '%^&DSF*k&GH)s^df52e%&3',       //cookie加密key
             'SESSION_PATH'        => APP_PATH . 'Runtime/session/', //SESSION存储路径
             'SESSION_AUTO_START'  => true,  //SESSION自动开启
             'XSS_AUTO_FITER_ON'   => false, //XSS自动过滤
