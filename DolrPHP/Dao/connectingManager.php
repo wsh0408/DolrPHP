@@ -20,14 +20,22 @@ class Db_connectingManager
      * 数据库连接
      * @var array
      */
-    static $db = array();
+    public static $db = array();
 
     /**
      * 获取连接对象实例
+     * 
+     * @param  string $host   host address
+     * @param  string $user   username
+     * @param  string $pass   passwotf
+     * @param  string $dbname database name
+     *
      * @throws Exception 没有可用的数据库连接工具
-     * @return Object
+     * 
+     * @return object
      */
-    static function getInstance($host, $user, $pass, $dbname) {
+    public static function getInstance($host, $user, $pass, $dbname) 
+    {
         if (empty(self::$db))
             self::connect($host, $user, $pass, $dbname);
         if (isset(self::$db['pdo'])) {
@@ -42,19 +50,21 @@ class Db_connectingManager
 
     /**
      * 设置数据库配置
-     * @param  string $host   主机
-     * @param  string $dbName 数据库名称
-     * @param  string $user   用户名
-     * @param  string $pass   密码
+     * 
+     * @param string $host   主机
+     * @param string $dbName 数据库名称
+     * @param string $user   用户名
+     * @param string $pass   密码
+     * 
      * @throws Exception 无连接工具
-     * @return  object
+     * 
+     * @return object
      */
-    static public function connect($host, $user, $pass, $dbName) {
+    public static function connect($host, $user, $pass, $dbName) 
+    {
         $enableEngine = self::getEnableEngine();
         if (!$enableEngine) {
             throw new Exception('没有可用的数据库连接工具');
-
-            return;
         }
         try {
             switch (strtolower($enableEngine)) {
@@ -97,11 +107,13 @@ class Db_connectingManager
      * 生成DSN
      * 单独做成方法的原因是为了以后拓展
      *
-     * @param $host
-     * @param $dbName
+     * @param string $host   host address
+     * @param string $dbName database name
+     * 
      * @return string
      */
-    static public function getDSN($host, $dbName) {
+    public static function getDSN($host, $dbName) 
+    {
         return "mysql:host={$host};dbname={$dbName}";
     }
 
@@ -110,7 +122,8 @@ class Db_connectingManager
      *
      * @return bool|string
      */
-    static public function getEnableEngine() {
+    public static function getEnableEngine() 
+    {
         /* if (class_exists('PDO')) {
              return 'PDO';
          } else if (class_exists('Mysqli')) {

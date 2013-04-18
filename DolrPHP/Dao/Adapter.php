@@ -13,13 +13,15 @@
 
 /**
  * 适配器接口
- */
+ **/
 interface DB_Adapter
 {
 
     /**
      * 获取表
-     * @param  string $tableName table name
+     * 
+     * @param string $tableName table name
+     * 
      * @return array
      */
     public function getTableInfo($tableName);
@@ -27,7 +29,7 @@ interface DB_Adapter
     /**
      * 获取最后执行的SQL
      *
-     * @return string $SQLString SQLString
+     * @return string SQL
      */
     public function getSQL();
 
@@ -36,6 +38,7 @@ interface DB_Adapter
      * 转义SQL并返回
      *
      * @param string $sqlValue value
+     * 
      * @return mixed
      */
     public function escape($sqlValue);
@@ -43,9 +46,9 @@ interface DB_Adapter
     /**
      * 执行一个SQL查询
      *
-     * @param string  $sql     SQL
-     * @param array   $values  values
-     * @param         object
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     * 
      * @return mixed
      */
     public function exec($sql, $values = array());
@@ -53,9 +56,9 @@ interface DB_Adapter
     /**
      * 执行一个SQL查询
      *
-     * @param string  $sql     SQL
-     * @param array   $values  values
-     * @param         object
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     * 
      * @return mixed
      */
     public function query($sql, $values = array());
@@ -63,33 +66,38 @@ interface DB_Adapter
     /**
      * 添加记录
      *
-     * @param $data 关联数组[字段 => 值]
+     * @param array $data 关联数组[字段 => 值]
+     * 
      * @return int
      */
     public function add($data);
 
     /**
      * 删除记录
-     * @param string $sql
-     * @param array  $values
+     * 
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     * 
      * @return bool
      */
     public function del($sql = '', $values = array());
 
     /**
-     * 获取一条记录
-     * getRow别名方法
+     * 获取一条记录 , getRow别名方法
      *
-     * @param string $sql
-     * @param array  $values
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     * 
      * @return array
      */
     public function find($sql = '1 = 1', $values = array());
 
     /**
      * 查询多条记录
-     * @param string $sql
-     * @param array  $values
+     * 
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     * 
      * @return array
      */
     public function select($sql = '1 = 1', $values = array());
@@ -98,18 +106,19 @@ interface DB_Adapter
     /**
      * 更新记录
      *
-     * @param array  $data
+     * @param array  $data 
      * @param string $sql
      * @param array  $values
+     * 
      * @return bool|mixed
      */
-    public function save($data = array(), $sql = '1 = 1', $values = array());
+    public function save($data = array(), $sql = '1 = 1');
 
     /**
      * 查询一条记录，返回二维数组
      *
-     * @param string $sql      SQL
-     * @param array  $values   values to bind
+     * @param string $sql    SQL
+     * @param array  $values values to bind
      *
      * @return array
      */

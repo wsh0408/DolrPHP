@@ -14,11 +14,13 @@ class Db_Model
 {
     /**
      * 适配器对象
+     * 
      * @var object
      */
     public $adapter;
 
-    public function __construct($tableName = '') {
+    public function __construct($tableName = '') 
+    {
         $adapter       = 'DB_Adapter_' . Db::$adapterType;
         $this->adapter = new $adapter($tableName); //实例化适配器
     }
@@ -31,21 +33,24 @@ class Db_Model
      *
      * @param $methodName
      * @param $args
+     * 
      * @return mixed
      */
-    public function __call($methodName, $args) {
+    public function __call($methodName, $args) 
+    {
         //getByUsername
-        if (FALSE !== strpos($methodName, 'getBy')) {
+        if (false !== strpos($methodName, 'getBy')) {
             //取字段名:getByUserName =>user_name,getByPassword => password
             $field = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', substr($methodName, 5)));
             $sql   = "`{$field}` = ?";
 
             return $this->adapter->getRow($sql, $args);
-            //实现假继承
+            
+        //实现假继承
         } elseif (is_callable(array( $this->adapter, $methodName ))) {
             return call_user_func_array(array( $this->adapter, $methodName ), $args);
         }
 
-        return FALSE;
+        return false;
     }
 }

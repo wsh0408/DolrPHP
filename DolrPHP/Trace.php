@@ -248,10 +248,10 @@ class Trace
     /**
      * 错误捕获方法
      *
-     * @param  int    $errorNo   错误号
-     * @param  string $errorString  错误字符串
-     * @param  string $errorFile 错误文件
-     * @param  int    $errorLine 错误行数
+     * @param int    $errorNo       错误号
+     * @param string $errorString   错误字符串
+     * @param string $errorFile     错误文件
+     * @param int    $errorLine     错误行数
      *
      * @return void
      */
