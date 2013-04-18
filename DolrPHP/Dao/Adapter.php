@@ -12,16 +12,16 @@
  **/
 
 /**
- * 适配器接口
+ * 适配器基类
  **/
-interface DB_Adapter
+abstract class DB_Adapter
 {
 
     /**
      * 获取表
-     * 
+     *
      * @param string $tableName table name
-     * 
+     *
      * @return array
      */
     public function getTableInfo($tableName);
@@ -33,22 +33,12 @@ interface DB_Adapter
      */
     public function getSQL();
 
-
-    /**
-     * 转义SQL并返回
-     *
-     * @param string $sqlValue value
-     * 
-     * @return mixed
-     */
-    public function escape($sqlValue);
-
     /**
      * 执行一个SQL查询
      *
      * @param string $sql    SQL
      * @param array  $values values to bind
-     * 
+     *
      * @return mixed
      */
     public function exec($sql, $values = array());
@@ -58,7 +48,7 @@ interface DB_Adapter
      *
      * @param string $sql    SQL
      * @param array  $values values to bind
-     * 
+     *
      * @return mixed
      */
     public function query($sql, $values = array());
@@ -67,17 +57,17 @@ interface DB_Adapter
      * 添加记录
      *
      * @param array $data 关联数组[字段 => 值]
-     * 
+     *
      * @return int
      */
     public function add($data);
 
     /**
      * 删除记录
-     * 
+     *
      * @param string $sql    SQL
      * @param array  $values values to bind
-     * 
+     *
      * @return bool
      */
     public function del($sql = '', $values = array());
@@ -87,17 +77,17 @@ interface DB_Adapter
      *
      * @param string $sql    SQL
      * @param array  $values values to bind
-     * 
+     *
      * @return array
      */
     public function find($sql = '1 = 1', $values = array());
 
     /**
      * 查询多条记录
-     * 
+     *
      * @param string $sql    SQL
      * @param array  $values values to bind
-     * 
+     *
      * @return array
      */
     public function select($sql = '1 = 1', $values = array());
@@ -106,10 +96,10 @@ interface DB_Adapter
     /**
      * 更新记录
      *
-     * @param array  $data 
+     * @param array  $data
      * @param string $sql
      * @param array  $values
-     * 
+     *
      * @return bool|mixed
      */
     public function save($data = array(), $sql = '1 = 1');

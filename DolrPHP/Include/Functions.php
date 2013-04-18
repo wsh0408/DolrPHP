@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架 (内置函数库 )
  *
- * @package     DolrPHP.Db
+ * @package     DolrPHP
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
@@ -267,7 +267,7 @@ function delDir($dir)
  *
  * @return string
  */
-function byte_format($size, $dec = 2)
+function byteFormat($size, $dec = 2)
 {
     $a   = array( "B", "KB", "MB", "GB", "TB", "PB" );
     $pos = 0;
@@ -280,15 +280,59 @@ function byte_format($size, $dec = 2)
 }
 
 /**
- * 获取客户端IP地址
+ * get the ip address
  *
- * @param boolean $toLong 是否转换为整型
+ * @param boolean $toLong 是否转换为整形
  *
- * @return int
+ * @return string | int
  */
 function getIp($toLong = false)
 {
-    return Http::getIp($toLong);
+    $ip = null;
+    if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $arr = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        $pos = array_search('unknown', $arr);
+        if (false !== $pos)
+           unset($arr[$pos]);
+        $ip = trim($arr[0]);
+    } elseif (isset($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (isset($_SERVER['REMOTE_ADDR'])) {
+        $ip = $_SERVER['REMOTE_ADDR'];
+    }
+
+    // IP地址合法验证
+    return (false !== ip2long($ip)) ? (bool )$tolong ? ip2long($ip) : $ip : '0.0.0.0';
+}
+
+/**
+ * 发送HTTP状态
+ *
+ * @param integer $code 状态码
+ *
+ * @return void
+ */
+function sendHttpStatus($code)
+{
+    static $status = array(
+        // Success 2xx
+        200 => 'OK',
+        // Redirection 3xx
+        301 => 'Moved Permanently',
+        302 => 'Moved Temporarily ', // 1.1
+        // Client Error 4xx
+        400 => 'Bad Request',
+        403 => 'Forbidden',
+        404 => 'Not Found',
+        // Server Error 5xx
+        500 => 'Internal Server Error',
+        503 => 'Service Unavailable',
+    );
+    if (isset($status[$code])) {
+        header('HTTP/1.1 ' . $code . ' ' . $status[$code]);
+        // 确保FastCGI模式下正常
+        header('Status:' . $code . ' ' . $status[$code]);
+    }
 }
 
 /**
@@ -406,18 +450,6 @@ function msubstr($str, $start = 0, $length = 100, $suffix = true, $charset = "ut
 
 
 /**
- * 发送HTTP状态
- *
- * @param integer $code 状态码
- *
- * @return void
- */
-function sendHttpStatus($code)
-{
-    Http::sendHttpStatus($code);
-}
-
-/**
  * 去除代码中的空白和注释
  *
  * @param string $content 代码内容
@@ -470,16 +502,3 @@ function stripWhitespace($content)
 
     return $stripStr;
 }
-
-/**
- * XSS过滤函数,去除代码中XSS跨站脚本
- *
- * @param  string $val 来源内容
- *
- * @return string
- */
-function remove_xss($val)
-{
-    return Request::removeXSS($val);
-}
-

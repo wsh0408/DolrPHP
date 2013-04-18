@@ -24,17 +24,17 @@ class Db_connectingManager
 
     /**
      * 获取连接对象实例
-     * 
+     *
      * @param  string $host   host address
      * @param  string $user   username
      * @param  string $pass   passwotf
      * @param  string $dbname database name
      *
      * @throws Exception 没有可用的数据库连接工具
-     * 
+     *
      * @return object
      */
-    public static function getInstance($host, $user, $pass, $dbname) 
+    public static function getInstance($host, $user, $pass, $dbname)
     {
         if (empty(self::$db))
             self::connect($host, $user, $pass, $dbname);
@@ -50,17 +50,17 @@ class Db_connectingManager
 
     /**
      * 设置数据库配置
-     * 
+     *
      * @param string $host   主机
      * @param string $dbName 数据库名称
      * @param string $user   用户名
      * @param string $pass   密码
-     * 
+     *
      * @throws Exception 无连接工具
-     * 
+     *
      * @return object
      */
-    public static function connect($host, $user, $pass, $dbName) 
+    public static function connect($host, $user, $pass, $dbName)
     {
         $enableEngine = self::getEnableEngine();
         if (!$enableEngine) {
@@ -109,10 +109,10 @@ class Db_connectingManager
      *
      * @param string $host   host address
      * @param string $dbName database name
-     * 
+     *
      * @return string
      */
-    public static function getDSN($host, $dbName) 
+    public static function getDSN($host, $dbName)
     {
         return "mysql:host={$host};dbname={$dbName}";
     }
@@ -122,7 +122,7 @@ class Db_connectingManager
      *
      * @return bool|string
      */
-    public static function getEnableEngine() 
+    public static function getEnableEngine()
     {
         /* if (class_exists('PDO')) {
              return 'PDO';
