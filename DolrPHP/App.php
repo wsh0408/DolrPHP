@@ -73,6 +73,12 @@ class App
     public static $tplEngine = null;
 
     /**
+     * App 运行结果
+     * @var string
+     */
+    private static $_appRunContent = null;
+
+    /**
      * initialize app
      *
      * @return void
@@ -151,13 +157,28 @@ class App
         //call action
         if (is_callable(array(self::$controller, $action))) {
             try {
+                ob_start();
                 self::$controller->$action();
+                self::$_appRunContent = ob_get_contents();
+                ob_end_clean();
             } catch (DolrException $e) {
                 throw $e;
             }
+            self::_response();
         } else {
             self::$controller->error404();
         }
+    }
+
+    /**
+     * 输出APP运行结果
+     *
+     * @return void
+     */
+    private static function _response()
+    {
+        if (self::$_appRunContent)
+            echo self::$_appRunContent;
     }
 
     /**

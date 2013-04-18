@@ -30,7 +30,7 @@ return array(
             'PAGE_SUCCESS'        => TPL_PATH . 'Success.php',    //成功消息页面,相对于模板目录
             'PAGE_ERROR'          => TPL_PATH . 'Error.php',      //失败消息页面
             'PAGE_EXCEPTION'      => TPL_PATH . 'Exception.php',   //系统异常页面
-            'PAGE_ERROR'          => TPL_PATH . 'SysError.php',    //系统错误页面
+            'PAGE_SYSERROR'       => TPL_PATH . 'SysError.php',    //系统错误页面
             'PAGE_TRACE'          => TPL_PATH . 'Trace.php',       //系统错误页面
             'AJAX_SIGN'           => false, //AJAX表单检测依据
             'DATA_CACHE_ON'       => false, //1|0

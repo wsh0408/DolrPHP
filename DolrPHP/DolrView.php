@@ -187,7 +187,8 @@ class DolrView
             include $this->_getCachePath($tplFileName, $cacheId);
         } else { //非缓存模式
             ob_start();
-            include $this->_writeCompile($tplFileName, $this->_parseTpl($tplFileName, $cacheId), $cacheId);
+            $parsedContent = $this->_parseTpl($tplFileName);
+            include $this->_writeCompile($tplFileName, $parsedContent, $cacheId);
             $cacheContent = ob_get_contents();
             ob_flush();
             ob_end_clean();
@@ -330,11 +331,10 @@ class DolrView
      * 解析模板
      *
      * @param string $tplFileName 模板文件
-     * @param string $cacheId     缓存ID
      *
      * @return string 解析后的内容
      */
-    protected function _parseTpl($tplFileName, $cacheId)
+    protected function _parseTpl($tplFileName)
     {
         $tplFilePath = $this->_getTplPath($tplFileName);
         $content = file_get_contents($tplFilePath);
@@ -347,7 +347,7 @@ class DolrView
         if (!empty($matches[1])) {
             foreach ($matches[1] as $key => $fileName) {
                 //将include换成文件内容
-                $compileContent = $this->_parseTpl($fileName, $cacheId);
+                $compileContent = $this->_parseTpl($fileName);
                 $content        = str_replace($matches[0][$key], $compileContent, $content);
             }
         }
@@ -365,7 +365,7 @@ class DolrView
      *
      * @return string
      */
-    private function _replaceString($content)
+    private function _replaceUserString($content)
     {
         $search      = array_keys($this->_replace);
         $replacement = $this->_replace;
@@ -513,7 +513,7 @@ class DolrView
      *
      * @return void
      */
-    protected function __set($proName, $proValue)
+    public function __set($proName, $proValue)
     {
         $this->set($proName, $proValue);
     }

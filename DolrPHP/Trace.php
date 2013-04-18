@@ -166,6 +166,41 @@ class Trace
     }
 
     /**
+     * Trace格式化
+     *
+     * @param array $dbgTrace trace info
+     * @param array $retArray    return array
+     *
+     * @return string
+     */
+    public static function traceFormat($dbgTrace, $retArray = false) {
+        $result = array();
+        foreach ($dbgTrace as $dbgIndex => $dbgInfo) {
+            $args = array();
+            foreach ($dbgInfo['args'] as $arg) {
+                if (is_array($arg)) {
+                    array_push($args, 'Array');
+                } elseif (is_bool($arg)) {
+                    array_push($args, (bool)$arg);
+                } elseif (is_object($arg)) {
+                    array_push($args, 'Object');
+                } elseif (is_string($arg)) {
+                    array_push($args, $arg);
+                } else {
+                    array_push($args, gettype($arg));
+                }
+            }
+            $result[] = "#{$dbgIndex} " . $dbgInfo['file']
+                        . " (line {$dbgInfo['line']}) -> {$dbgInfo['function']}( "
+                        . join(",", $args) . " )";
+        }
+        if ($array)
+            return $result;
+
+        return '<ul><li>' . join('</li><li>', $result) . '</li></ul>';
+    }
+
+    /**
      * Trace信息输出
      *
      * @return mixed
@@ -175,8 +210,8 @@ class Trace
         //time
         $timeUsage = round(self::$endTime - self::$startTime, 5);
         //memory
-        $memUsage = byte_format(self::$endMemory - self::$startMemory);
-        //errofinfo
+        $memUsage = byteFormat(self::$endMemory - self::$startMemory);
+        //errorInfo
         $errorInfo = empty(self::$errorInfo) ? '' : '<li>ERROR:' . join('</li><li>ERROR:', array_reverse(self::$errorInfo)) . '</li>';
         //normalInfo
         $normalInfo = empty(self::$normalInfo) ? '' : '<li>' . join('</li><li>', array_reverse(self::$normalInfo)) . '</li>';
@@ -209,43 +244,6 @@ class Trace
     }
 
     /**
-     * Trace格式化
-     *
-     * @param array $dbgTrace trace info
-     * @param array $retArray    return array
-     *
-     * @return string
-     */
-    public static function traceFormat($dbgTrace, $retArray = FALSE) {
-        $result = array();
-        foreach ($dbgTrace as $dbgIndex => $dbgInfo) {
-            $args = array();
-            foreach ($dbgInfo['args'] as $arg) {
-                if (is_array($arg)) {
-                    array_push($args, 'Array');
-                } elseif (is_bool($arg)) {
-                    array_push($args, (bool)$arg);
-                } elseif (is_object($arg)) {
-                    array_push($args, 'Object');
-                } elseif (is_string($arg)) {
-                    array_push($args, $arg);
-                } else {
-                    array_push($args, gettype($arg));
-                }
-            }
-            $result[] = "#{$dbgIndex} " . $dbgInfo['file']
-                        . " (line {$dbgInfo['line']}) -> {$dbgInfo['function']}( "
-                        . join(",", $args) . " )";
-        }
-        if ($array)
-            return $result;
-
-        return '<ul><li>' . join('</li><li>', $result) . '</li></ul>';
-    }
-
-
-
-    /**
      * 错误捕获方法
      *
      * @param int    $errorNo       错误号
@@ -258,24 +256,23 @@ class Trace
     public static function errorHandler($errorNo, $errorString, $errorFile, $errorLine)
     {
         self::error($errorNo, $errorString, $errorFile, $errorLine);
-        if ($errorNo == E_RECOVERABLE_ERROR or $errorNo == E_PARSE or $errorNo == E_USER_ERROR) {
+        if ($errorNo) {
             $args = array(
                      '[MESSAGE]'  => $errorString,
                      '[FILENAME]' => $errorFile,
                      '[LINE]'     => $errorLine
                     );
-            $html = G(C('PAGE_ERROR'), false);
+            $html = G(C('PAGE_SYSERROR'), false);
             $html = str_replace(array_keys($args), $args, $html);
-            if (Request::isAjax())
-                exit(data2json(array(
-                                'info' => '系统出错',
-                                'data' => array(
-                                           'info' => $errorString,
-                                           'file' => $errorFile,
-                                           'line' => $errorLine,
-                                          )
-                               )));
-            exit($html);
+            $ajaxArray = array(
+                          'info' => '系统出错',
+                          'data' => array(
+                                     'info' => $errorString,
+                                     'file' => $errorFile,
+                                     'line' => $errorLine,
+                                    ),
+                         );
+            self::_outputError($ajaxArray, $html);
         }
     }
 
@@ -328,16 +325,32 @@ class Trace
         error_log($msg);
         $html = G(C('PAGE_EXCEPTION'), false);
         $html = str_replace(array_keys($args), $args, $html);
+
+        $ajaxArray = array(
+                      'info' => '系统出错',
+                      'data' => array(
+                                 'info' => $exception->getMessage(),
+                                 'file' => $exception->getFile(),
+                                 'line' => $exception->getLine(),
+                                ),
+                     );
+        self::_outputError($ajaxArray, $html);
+    }
+
+    /**
+     * 输出错误或者异常信息
+     *
+     * @param array  $ajaxArray 当请求是ajax时的返回结果
+     * @param string $html      不是ajax时返回的Html
+     *
+     * @return void
+     */
+    private static function _outputError($ajaxArray = array(), $html = '')
+    {
+        if(!C('DEBUG'))
+            return false;
         if (Request::isAjax())
-            exit(data2json(
-                array(
-                 'info' => '系统出错',
-                 'data' => array(
-                            'info' => $exception->getMessage(),
-                            'file' => $exception->getFile(),
-                            'line' => $exception->getLine()
-                           )
-                )));
+            exit(data2json($ajaxArray));
         exit($html);
     }
 

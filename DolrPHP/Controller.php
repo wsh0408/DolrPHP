@@ -122,7 +122,7 @@ class Controller
         }
         $this->_log($tplPath, Trace::LOG_TYPE_TEMPLATE);
         try {
-            App::$tplEngine->display($tplPath, $cacheId = null);
+            App::$tplEngine->display($tplPath, $cacheId);
         } catch (DolrException $e) {
             throw $e;
         }
