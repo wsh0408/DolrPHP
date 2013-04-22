@@ -262,16 +262,7 @@ class App
     private static function _initAppConfig(array $appConfig)
     {
         $defaultConfig = include INC_PATH . 'ConfigBase.php';
-        $config = array_merge($defaultConfig, $appConfig);
-        //写入配置文件到缓存
-        $configFile = $config['RUNTIME_PATH'].'config/config.php';
-        if( $config['DEBUG'] || !file_exists($configFile)
-            || filemtime(APP_PATH . 'config.php') > filemtime($configFile)) {
-
-            $content = "<?php\n return ".var_export($config, true) . ';';
-            W($configFile, $content, false);
-        }
-        self::$config = include $configFile;
+        self::$config = array_merge($defaultConfig, $appConfig);
     }
 
     /**

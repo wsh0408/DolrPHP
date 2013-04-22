@@ -4,11 +4,18 @@ return array(
             'SHOW_TRACE'          => true,
             'DIR_CHECK'           => true,     //目录自动检测
             'ROUTING_TABLE'       => array(),   //路由表
-            'DB_HOST'             => 'localhost', //数据库主机,
-            'DB_NAME'             => 'dolrphp', //数据库名称,
-            'DB_USER'             => 'root',    //用户名
-            'DB_PASS'             => '',    //密码
-            'DB_PREFIX'           => '',    //数据表前缀
+            'DB_SET'              => array(
+                                      'default' => array(
+                                                    'host'    => 'localhost', //数据库主机,
+                                                    'name'    => 'dolrphp', //数据库名称,
+                                                    'user'    => 'root',    //用户名
+                                                    'pass'    => '',    //密码
+                                                    'prefix'  => '',    //数据表前缀
+                                                    'charset' => 'utf8',//字符集
+                                                    ),
+                                      'writer'  => array(),
+                                      'reader'  => array(),
+                                    ),
             'COMMON_INCLUDE_PATH' => './',  //需要加入的include_path
             'CONTROLLER_PATH'     => APP_PATH . 'Controller/',  //控制器目录
             'MODEL_PATH'          => APP_PATH . 'Model/',       //模型目录

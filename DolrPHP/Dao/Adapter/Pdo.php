@@ -16,26 +16,190 @@
  **/
 class Db_Adapter_Pdo implements Db_Adapter
 {
+
     /**
-     * 数据库连接对象
+     * writer
      *
-     * @var object
-     **/
-    public $instance = NULL;
+     * @var resource
+     */
+    private $_writer;
+
+
+     /**
+     * reader
+     *
+     * @var resource
+     */
+    private $_reader;
+
+    /**
+     * 表结构
+     *
+     * @var array
+     */
+    private $_tableMeta;
 
     /**
      * 最后插入的数据ID
      *
      * @var integer
      **/
-    public $lastInertId;
+    private $_lastInsertId;
+
+    /*private $*/
+
+    public function __construct($tableName, $writer, $reader = null)
+    {
+        $this->table
+    }
+
 
     /**
-     * 当前表信息
+     * 获取表
      *
-     * @var array
-     **/
-    public $table = array();
+     * @param string $tableName table name
+     *
+     * @return array
+     */
+    private function getTableMetaInfo($tableName)
+    {
+        $sql = "DESCRIBE {$tableName}";
+        $this->query($sql);
+    }
 
+    /**
+     * 执行一个SQL查询
+     *
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     *
+     * @return mixed
+     */
+    public function exec($sql, $values = array());
+
+    /**
+     * 执行一个SQL查询
+     *
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     *
+     * @return mixed
+     */
+    public function query($sql, $values = array());
+
+    /**
+     * 添加记录
+     *
+     * @param array $data 关联数组[字段 => 值]
+     *
+     * @return int
+     */
+    public function add($data);
+
+    /**
+     * 删除记录
+     *
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     *
+     * @return bool
+     */
+    public function del($sql = '', $values = array());
+
+    /**
+     * 获取一条记录 , getRow别名方法
+     *
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     *
+     * @return array
+     */
+    public function find($sql = '', $values = array());
+
+    /**
+     * 查询多条记录
+     *
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     *
+     * @return array
+     */
+    public function select($sql = '', $values = array());
+
+
+    /**
+     * 更新记录
+     *
+     * @param array  $data
+     * @param string $sql
+     * @param array  $values
+     *
+     * @return bool|mixed
+     */
+    public function save($data = array(), $sql = '');
+
+    /**
+     * 查询一条记录，返回二维数组
+     *
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     *
+     * @return array
+     */
+    public function getRow($sql = '', $values = array());
+
+    /**
+     * 查询满足条件的所有
+     * @param string $sql      SQL
+     * @param array  $values   values to bind
+     *
+     * @return array
+     */
+    public function getAll($sql = '', $values = array());
+
+    /**
+     * 查询一列值，返回一维数组
+     * @param string $colName   field name
+     * @param string $sql       SQL
+     * @param array  $values    values to bind
+     *
+     * @return array
+     */
+    public function getCol($colName, $sql = '', $values = array());
+
+    /**
+     * 查询一条记录中单个字段的值
+     * 此方法会返回一条记录中一个字段的值，常用于查询一个具体的值
+     * 比如查询用户表里id = 1 的用户名（username），将会返回一个具体的string 值
+     *
+     * @param string $cellName cell name
+     * @param string $sql      SQL
+     * @param array  $values   values to bind
+     *
+     * @return string $singleValue value from cell
+     */
+    public function getCell($cellName, $sql = '', $values = array());
+
+    /**
+     * 得到一个关联数组结果集
+     * 此方法只适用于单条记录，多条记录不适用
+     *
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     *
+     * @return array $associativeArray associative array result set
+     */
+    public function getAssoc($sql = '', $values = array());
+
+    /**
+     * 得到一个索引数组结果集
+     * 此方法只适用于单条记录，多条记录不适用
+     *
+     * @param string $sql    SQL
+     * @param array  $values values to bind
+     *
+     * @return array $associativeArray associative array result set
+     */
+    public function getArray($sql = '', $values = array());
 
 } // END class Db_Adapter_Pdo

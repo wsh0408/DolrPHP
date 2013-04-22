@@ -14,7 +14,7 @@
 /**
  * 适配器基类
  **/
-abstract class DB_Adapter
+interface DB_Adapter
 {
 
     /**
@@ -24,14 +24,7 @@ abstract class DB_Adapter
      *
      * @return array
      */
-    public function getTableInfo($tableName);
-
-    /**
-     * 获取最后执行的SQL
-     *
-     * @return string SQL
-     */
-    public function getSQL();
+    private function getTableMetaInfo($tableName);
 
     /**
      * 执行一个SQL查询
@@ -80,7 +73,7 @@ abstract class DB_Adapter
      *
      * @return array
      */
-    public function find($sql = '1 = 1', $values = array());
+    public function find($sql = '', $values = array());
 
     /**
      * 查询多条记录
@@ -90,7 +83,7 @@ abstract class DB_Adapter
      *
      * @return array
      */
-    public function select($sql = '1 = 1', $values = array());
+    public function select($sql = '', $values = array());
 
 
     /**
@@ -102,7 +95,7 @@ abstract class DB_Adapter
      *
      * @return bool|mixed
      */
-    public function save($data = array(), $sql = '1 = 1');
+    public function save($data = array(), $sql = '');
 
     /**
      * 查询一条记录，返回二维数组
@@ -112,7 +105,7 @@ abstract class DB_Adapter
      *
      * @return array
      */
-    public function getRow($sql = '1 = 1', $values = array());
+    public function getRow($sql = '', $values = array());
 
     /**
      * 查询满足条件的所有
@@ -121,7 +114,7 @@ abstract class DB_Adapter
      *
      * @return array
      */
-    public function getAll($sql = '1 = 1', $values = array());
+    public function getAll($sql = '', $values = array());
 
     /**
      * 查询一列值，返回一维数组
@@ -131,7 +124,7 @@ abstract class DB_Adapter
      *
      * @return array
      */
-    public function getCol($colName, $sql = '1 = 1', $values = array());
+    public function getCol($colName, $sql = '', $values = array());
 
     /**
      * 查询一条记录中单个字段的值
@@ -144,7 +137,7 @@ abstract class DB_Adapter
      *
      * @return string $singleValue value from cell
      */
-    public function getCell($cellName, $sql = '1 = 1', $values = array());
+    public function getCell($cellName, $sql = '', $values = array());
 
     /**
      * 得到一个关联数组结果集
@@ -155,7 +148,7 @@ abstract class DB_Adapter
      *
      * @return array $associativeArray associative array result set
      */
-    public function getAssoc($sql = '1 = 1', $values = array());
+    public function getAssoc($sql = '', $values = array());
 
     /**
      * 得到一个索引数组结果集
@@ -166,6 +159,15 @@ abstract class DB_Adapter
      *
      * @return array $associativeArray associative array result set
      */
-    public function getArray($sql = '1 = 1', $values = array());
+    public function getArray($sql = '', $values = array());
+
+    /**
+     * 关闭连接释放资源
+     *
+     * @param resource $handler database resource
+     *
+     * @return void
+     */
+    public function close($handler);
 
 }// END class Db_Adapter

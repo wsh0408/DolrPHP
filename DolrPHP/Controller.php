@@ -20,10 +20,19 @@
 class Controller
 {
     /**
+     * db object
+     *
+     * @var Db(object)
+     */
+    protected static $db = null;
+
+    /**
      * 操作失败提示
+     *
      * @param  string $msg   消息
      * @param  string $url   跳转URL
      * @param  int    $delay 跳转延迟时间
+     *
      * @return void
      */
     public function error($msg, $url, $delay)
@@ -33,9 +42,11 @@ class Controller
 
     /**
      * 操作成功提示
+     *
      * @param  string  $msg       消息
      * @param  string  $url       跳转URL
      * @param  int     $delay     跳转延迟时间
+     *
      * @return void
      */
     public function success($msg, $url, $delay)
@@ -45,10 +56,12 @@ class Controller
 
     /**
      * 跳转提示
-     * @param string   $type      类型
-     * @param  string  $msg       消息
-     * @param  string  $url       跳转URL
-     * @param  int     $delay     跳转延迟时间
+     *
+     * @param string  $type      类型
+     * @param string  $msg       消息
+     * @param string  $url       跳转URL
+     * @param integer $delay     跳转延迟时间
+     *
      * @return void
      */
     private function _jump($type, $msg, $url, $delay)
@@ -63,8 +76,9 @@ class Controller
     /**
      * AJAX返回
      *
-     * @param mixed  返回的数据
-     * @param string 消息
+     * @param mixed  $data 返回的数据
+     * @param string $info 消息
+     *
      * @return string
      */
     public function ajax($data, $info = '')
@@ -72,14 +86,14 @@ class Controller
         if (!headers_sent()) {
             header('content-type: application/json; charset=utf-8');
         }
-        exit(data2json(array( 'info' => $info, 'data' => $data )));
+        exit(data2json(array('info' => $info, 'data' => $data)));
     }
 
     /**
      * 分配变量[使用模板引擎时适用]
      *
-     * @param  string     $varName     模板变量名
-     * @param  mixed      $data        变量值
+     * @param string $varName 模板变量名
+     * @param mixed  $data    变量值
      *
      * @return void
      */
@@ -160,6 +174,40 @@ class Controller
         }
         $this->set('errorInfo', $string);
         $this->display(C('PAGE_404'));
+    }
+
+    /**
+     * __get
+     *
+     * @param string $proName property name
+     *
+     * @return mixed
+     */
+    public function __get($proName)
+    {
+        switch ($proName) {
+            case 'db':
+            case 'database':
+                break;
+
+            default:
+                # code...
+                break;
+        }
+    }
+
+    /**
+     * 获取数据库链接对象
+     *
+     * @return
+     */
+    private function _getDb()
+    {
+        if (!isset(self::$db)) {
+
+        }
+
+        return self::$db;
     }
 
     /**

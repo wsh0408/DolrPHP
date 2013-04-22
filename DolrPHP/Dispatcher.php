@@ -21,6 +21,7 @@ class Dispatcher
 {
     /**
      * 默认路由表
+     *
      * @var array
      */
     public static $routingTable = array(

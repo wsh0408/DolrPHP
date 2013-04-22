@@ -27,7 +27,7 @@
     .traceInfo .head .hd{font-size:27px;}
     .traceInfo .head span.close{ position:absolute; right:20px;top:20px; cursor:pointer; padding:0 5px; text-align:center; overflow:hidden; color:#444;font-size:22px;}
     .traceInfo .content { padding: 10px; color: #666; }
-    .traceInfo .content .classList,.traceInfo .content .infoList { border: 1px dashed #ccc; padding: 5px; margin: 5px; overflow:auto; max-height:100px;}
+    .traceInfo .content .classList,.traceInfo .content .infoList { border: 1px solid #ccc; padding: 5px; margin: 5px; overflow:auto; max-height:100px;}
     .traceInfo .content p { line-height: 1.5em; }
     .traceInfo .content p span { font-weight: bold; text-align: left; display: inline-block; word-spacing:2px; margin-right: 5px; }
     .traceInfo .content p span.class{ font-weight:normal;}
