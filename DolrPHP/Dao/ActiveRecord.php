@@ -19,7 +19,7 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
 {
     /**
      * 单条记录数据
-     * 
+     *
      * @var array
      */
     protected $data = array();
@@ -33,20 +33,20 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
 
     /**
      * 数据库连接对象
-     * 
+     *
      * @var object
      */
     protected static $adapter = null;
 
     /**
      * 实例化对象
-     * 
+     *
      * @param array $tableName 当前数据所属表名
      * @param array $data      数据
      *
      * @return void
      */
-    public function __construct($tableName, $data) 
+    public function __construct($tableName, $data)
     {
         $this->data = $data;
         if (is_null(self::$adapter)) {
@@ -59,42 +59,42 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
 
     /**
      * 更新当前记录[只限单条记录形式]
-     * 
+     *
      * @return boolean
      */
-    public function save() 
+    public function save()
     {
         $data = $this->data;
 
-        return self::$adapter->save($data, "`{$this->table['pk']}` = ?", array( $data[$this->table['pk']] ));
+        return self::$adapter->save($data, "`{$this->table['pk']}` = ?", array($data[$this->table['pk']]));
     }
 
     /**
      * 删除当前记录
-     * 
+     *
      * @return boolean
      */
-    public function del() 
+    public function del()
     {
-        self::$adapter->del($this->table['pk'] . ' = ?', array( $this->data[$this->table['pk']] ));
+        self::$adapter->del($this->table['pk'] . ' = ?', array($this->data[$this->table['pk']]));
     }
 
     /**
      * 导出为关联数组
-     * 
+     *
      * @return array associative Array
      */
-    public function export() 
+    public function export()
     {
         return $this->data;
     }
 
     /**
      * 是否为单条导出
-     * 
+     *
      * @return array
      */
-    public function toArray() 
+    public function toArray()
     {
         return array_values($this->export());
     }
@@ -104,7 +104,7 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
      *
      * @return array associative Array
      */
-    public function toAssoc() 
+    public function toAssoc()
     {
         return $this->export();
     }
@@ -117,21 +117,21 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
      *
      * @return void
      */
-    public function __call($methodName, $args) 
+    public function __call($methodName, $args)
     {
         if (!method_exists($this, $methodName) and method_exists(self::$adapter, $methodName)) {
-            call_user_func_array(array( self::$adapter, $methodName ), $args);
+            call_user_func_array(array(self::$adapter, $methodName ), $args);
         }
     }
 
     /**
      * 访问属性
-     * 
+     *
      * @param string $proName property name
-     * 
+     *
      * @return mixed
      */
-    public function &__get($proName) 
+    public function &__get($proName)
     {
         if (isset($this->data[$proName])) {
             return $this->data[$proName];
@@ -140,13 +140,13 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
 
     /**
      * 设置属性
-     * 
+     *
      * @param string $proName  property name
      * @param mixed  $proValue value
-     * 
+     *
      * @return mixed
      */
-    public function __set($proName, $proValue) 
+    public function __set($proName, $proValue)
     {
         if (isset($this->data[$proName])) {
             return $this->data[$proName] = $proValue;

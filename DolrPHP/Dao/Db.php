@@ -29,18 +29,11 @@ class Db
                         );
 
     /**
-     * 适配器对象
-     *
-     * @var string
-     */
-    protected static $adapter = '';
-
-    /**
      * 数据表前缀
      *
      * @var string
      */
-    protected static $db_prefix = '';
+    protected static $tablePrefix = '';
 
     /**
      * 日志对象
@@ -71,13 +64,11 @@ class Db
      */
     public static function initialize(array $writerConfig, array $readerConfig = null)
     {
-        $engine = ucfirst(strtolower(self::getEnableEngine()));
+        if (self::$db['writer']) {
+            return;
+        }
         spl_autoload_register('self::_daoAutoLoader');
-        $adapter = 'DB_Adapter_' . $engine;
         try {
-            //实例化适配器
-            self::$adapter = new $adapter();
-
             //连接资源
             self::$db['writer'] = self::_setConnector($writerConfig, 'writer');
             if (!is_array($readerConfig)) {
@@ -91,11 +82,48 @@ class Db
         }
     }
 
+    /**
+     * 实例化一个表
+     *
+     * @param string $tableName table name
+     *
+     * @return
+     */
+    public static function dispense($tableName)
+    {
+        $engine = ucfirst(strtolower(self::getEnableEngine()));
+        $adapter = 'DB_Adapter_' . $engine;
+        self::_getTableName($tableName);
+        try {
+            //实例化适配器
+            $adapterObj = new $adapter(self::$db['writer'], self::$db['reader']);
+            $adapterObj->dispenseTable($tableName);
+            return $adapterObj;
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
+    /**
+     * 创建完整的表名
+     *
+     * @param string $tableName table name
+     *
+     * @return string full table name
+     */
+    private static function _getTableName($tableName)
+    {
+        if (strpos($tableName, self::$tablePrefix) == 0) {
+            return $tableName;
+        }
+        return self::$tablePrefix . $tableName;
+    }
+
 
     /**
      * 设置数据库连接器
      *
-     * @param string $config  配置
+     * @param array  $config  配置
      * @param string $object  设置对象(writer | reader)
      *
      * @throws Exception 无连接工具
@@ -155,7 +183,7 @@ class Db
      * Dao autoloader
      *
      * @param string $className class name
-     * 
+     *
      * @return void
      */
     private static function _daoAutoLoader($className)

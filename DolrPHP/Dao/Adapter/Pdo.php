@@ -48,11 +48,30 @@ class Db_Adapter_Pdo implements Db_Adapter
 
     /*private $*/
 
-    public function __construct($tableName, $writer, $reader = null)
+    public function __construct(PDO $writer, PDO $reader = null)
     {
-        
+        if (!is_null($this->writer)) {
+            return;
+        }
+        self::$writer = $writer;
+        if ($reader) {
+            self::$reader = $reader;
+        } else {
+            self::$reader = $writer;
+        }
     }
 
+    /**
+     * 实例化一个表
+     *
+     * @param string $tableName table name
+     *
+     * @return
+     */
+    public function dispenseTable($tableName)
+    {
+        $this->tableName = $tableName;
+    }
 
     /**
      * 获取表

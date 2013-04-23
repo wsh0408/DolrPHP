@@ -20,9 +20,9 @@ if (strlen($_SERVER['DOCUMENT_ROOT']) > strlen($dirOfScriptName) + 1) {
 }
 
 //base
-defined('APP_NAME')  or define('APP_NAME', basename($dirOfScriptName));
-defined('APP_PATH')  or define('APP_PATH', $dirOfScriptName . '/');
-defined('DOLR_PATH') or define('DOLR_PATH', $dirOfLocal . '/');
+defined('APP_NAME')  || define('APP_NAME', basename($dirOfScriptName));
+defined('APP_PATH')  || define('APP_PATH', $dirOfScriptName . '/');
+defined('DOLR_PATH') || define('DOLR_PATH', $dirOfLocal . '/');
 
 //dirs
 define('DB_PATH', DOLR_PATH . 'Dao/');       //DolrPHP 数据库驱动目录
