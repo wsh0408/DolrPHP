@@ -11,6 +11,7 @@
  * @version     $Id: Joychao $
  **/
 
+defined('DB_PATH') || define('DB_PATH', dirname(__FILE__) . '/');
 /**
  * Db类
  **/
@@ -71,6 +72,7 @@ class Db
     public static function initialize(array $writerConfig, array $readerConfig = null)
     {
         $engine = ucfirst(strtolower(self::getEnableEngine()));
+        spl_autoload_register('self::_daoAutoLoader');
         $adapter = 'DB_Adapter_' . $engine;
         try {
             //实例化适配器
@@ -78,12 +80,12 @@ class Db
 
             //连接资源
             self::$db['writer'] = self::_setConnector($writerConfig, 'writer');
-            if (!is_array($reader)) {
+            if (!is_array($readerConfig)) {
                 self::$db['reader'] = &self::$db['writer'];
                 return;
             }
             //主从不分离
-            self::$db['reader'] = self::_setConnector($writerConfig, 'reader');
+            self::$db['reader'] = self::_setConnector($readerConfig, 'reader');
         } catch (Exception $e) {
             throw $e;
         }
@@ -100,11 +102,12 @@ class Db
      *
      * @return object
      */
-    private function _setConnector(array $config, $object = 'writer')
+    private static function _setConnector(array $config, $object = 'writer')
     {
         if(self::$db[$object])
             return true;
         try {
+            $config['charset'] = isset($config['charset']) ? $config['charset'] : 'utf-8';
             self::$db[$object] = self::connect($config['host'], $config['user'],
                                     $config['pass'], $config['dbname'], $config['charset']);
         } catch (Exception $e) {
@@ -134,13 +137,13 @@ class Db
         try {
             switch (strtolower($enableEngine)) {
                 case 'pdo': // pdo
-                    return self::getMysql($host, $user, $pass, $charset);
+                    return self::getPdo($host, $user, $pass, $dbName, $charset);
                     break;
                 case 'mysqli': // mysqli
-                    return self::getMysqli($host, $user, $pass, $charset);
+                    return self::getMysqli($host, $user, $pass, $dbName, $charset);
                     break;
                 default:  // mysql
-                    return self::getMysql($host, $user, $pass, $charset);
+                    return self::getMysql($host, $user, $pass, $dbName, $charset);
                     break;
             }
         } catch (Exception $e) {
@@ -149,20 +152,34 @@ class Db
     }
 
     /**
+     * Dao autoloader
+     *
+     * @param string $className class name
+     * 
+     * @return void
+     */
+    private static function _daoAutoLoader($className)
+    {
+        if (false !== stripos($className, 'Db_')) { //DB
+            include DB_PATH . str_replace('_', '/', substr($className, 3)) . '.php';
+        }
+    }
+
+    /**
      * 获取PDO实例
      *
      * @param string $host    主机
-     * @param string $dbName  数据库名称
      * @param string $user    用户名
      * @param string $pass    密码
+     * @param string $dbName  数据库名称
      * @param string $charset 字符集
      *
      * @return PDO
      */
-    private function getPdo($host, $dbName, $user, $pass, $charset)
+    private static function getPdo($host, $user, $pass, $dbName, $charset)
     {
         try {
-            $dsn = self::getDSN($host, $dbName);
+            $dsn = self::_createDSN($host, $dbName);
             $pdo = new PDO($dsn, $user, $pass);
             $pdo->setAttribute(1002, 'SET NAMES ' . $charset);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -186,7 +203,7 @@ class Db
      *
      * @return Mysqli
      */
-    private function getMysqli($host, $user, $pass, $dbName, $charset)
+    private static function getMysqli($host, $user, $pass, $dbName, $charset)
     {
         try {
             $mysqli = new Mysqli($host, $user, $pass, $dbName);
@@ -208,7 +225,7 @@ class Db
      *
      * @return Mysqli
      */
-    private function getMysql($host, $user, $pass, $dbName, $charset)
+    private static function getMysql($host, $user, $pass, $dbName, $charset)
     {
         try {
             $mysql = mysql_connect($host, $user, $pass);
@@ -229,7 +246,7 @@ class Db
      *
      * @return string
      */
-    protected static function _getDSN($host, $dbName)
+    protected static function _createDSN($host, $dbName)
     {
         return "mysql:host={$host};dbname={$dbName}";
     }

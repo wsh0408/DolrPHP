@@ -50,7 +50,7 @@ class Db_Adapter_Pdo implements Db_Adapter
 
     public function __construct($tableName, $writer, $reader = null)
     {
-        $this->table
+        
     }
 
 
@@ -61,7 +61,7 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return array
      */
-    private function getTableMetaInfo($tableName)
+    public function getTableMetaInfo($tableName)
     {
         $sql = "DESCRIBE {$tableName}";
         $this->query($sql);
@@ -75,7 +75,10 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return mixed
      */
-    public function exec($sql, $values = array());
+    public function exec($sql, $values = array())
+    {
+
+    }
 
     /**
      * 执行一个SQL查询
@@ -85,7 +88,9 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return mixed
      */
-    public function query($sql, $values = array());
+    public function query($sql, $values = array()){
+
+    }
 
     /**
      * 添加记录
@@ -94,7 +99,10 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return int
      */
-    public function add($data);
+    public function add($data)
+    {
+
+    }
 
     /**
      * 删除记录
@@ -104,7 +112,10 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return bool
      */
-    public function del($sql = '', $values = array());
+    public function del($sql = '', $values = array())
+    {
+
+    }
 
     /**
      * 获取一条记录 , getRow别名方法
@@ -114,7 +125,10 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return array
      */
-    public function find($sql = '', $values = array());
+    public function find($sql = '', $values = array())
+    {
+
+    }
 
     /**
      * 查询多条记录
@@ -124,7 +138,10 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return array
      */
-    public function select($sql = '', $values = array());
+    public function select($sql = '', $values = array())
+    {
+
+    }
 
 
     /**
@@ -136,7 +153,9 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return bool|mixed
      */
-    public function save($data = array(), $sql = '');
+    public function save($data = array(), $sql = ''){
+
+    }
 
     /**
      * 查询一条记录，返回二维数组
@@ -146,7 +165,9 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return array
      */
-    public function getRow($sql = '', $values = array());
+    public function getRow($sql = '', $values = array()){
+
+    }
 
     /**
      * 查询满足条件的所有
@@ -155,7 +176,9 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return array
      */
-    public function getAll($sql = '', $values = array());
+    public function getAll($sql = '', $values = array()){
+
+    }
 
     /**
      * 查询一列值，返回一维数组
@@ -165,7 +188,9 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return array
      */
-    public function getCol($colName, $sql = '', $values = array());
+    public function getCol($colName, $sql = '', $values = array()){
+
+    }
 
     /**
      * 查询一条记录中单个字段的值
@@ -178,7 +203,9 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return string $singleValue value from cell
      */
-    public function getCell($cellName, $sql = '', $values = array());
+    public function getCell($cellName, $sql = '', $values = array()){
+
+    }
 
     /**
      * 得到一个关联数组结果集
@@ -189,7 +216,10 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return array $associativeArray associative array result set
      */
-    public function getAssoc($sql = '', $values = array());
+    public function getAssoc($sql = '', $values = array())
+    {
+
+    }
 
     /**
      * 得到一个索引数组结果集
@@ -200,6 +230,21 @@ class Db_Adapter_Pdo implements Db_Adapter
      *
      * @return array $associativeArray associative array result set
      */
-    public function getArray($sql = '', $values = array());
+    public function getArray($sql = '', $values = array())
+    {
+
+    }
+
+    /**
+     * 关闭连接释放资源
+     *
+     * @param resource $handler database resource
+     *
+     * @return void
+     */
+    public function close()
+    {
+        # code...
+    }
 
 } // END class Db_Adapter_Pdo

@@ -24,7 +24,7 @@ interface DB_Adapter
      *
      * @return array
      */
-    private function getTableMetaInfo($tableName);
+    function getTableMetaInfo($tableName);
 
     /**
      * 执行一个SQL查询
@@ -34,7 +34,7 @@ interface DB_Adapter
      *
      * @return mixed
      */
-    public function exec($sql, $values = array());
+    function exec($sql, $values = array());
 
     /**
      * 执行一个SQL查询
@@ -44,7 +44,7 @@ interface DB_Adapter
      *
      * @return mixed
      */
-    public function query($sql, $values = array());
+    function query($sql, $values = array());
 
     /**
      * 添加记录
@@ -53,7 +53,7 @@ interface DB_Adapter
      *
      * @return int
      */
-    public function add($data);
+    function add($data);
 
     /**
      * 删除记录
@@ -63,7 +63,7 @@ interface DB_Adapter
      *
      * @return bool
      */
-    public function del($sql = '', $values = array());
+    function del($sql = '', $values = array());
 
     /**
      * 获取一条记录 , getRow别名方法
@@ -73,7 +73,7 @@ interface DB_Adapter
      *
      * @return array
      */
-    public function find($sql = '', $values = array());
+    function find($sql = '', $values = array());
 
     /**
      * 查询多条记录
@@ -83,7 +83,7 @@ interface DB_Adapter
      *
      * @return array
      */
-    public function select($sql = '', $values = array());
+    function select($sql = '', $values = array());
 
 
     /**
@@ -95,7 +95,7 @@ interface DB_Adapter
      *
      * @return bool|mixed
      */
-    public function save($data = array(), $sql = '');
+    function save($data = array(), $sql = '');
 
     /**
      * 查询一条记录，返回二维数组
@@ -105,7 +105,7 @@ interface DB_Adapter
      *
      * @return array
      */
-    public function getRow($sql = '', $values = array());
+    function getRow($sql = '', $values = array());
 
     /**
      * 查询满足条件的所有
@@ -114,7 +114,7 @@ interface DB_Adapter
      *
      * @return array
      */
-    public function getAll($sql = '', $values = array());
+    function getAll($sql = '', $values = array());
 
     /**
      * 查询一列值，返回一维数组
@@ -124,7 +124,7 @@ interface DB_Adapter
      *
      * @return array
      */
-    public function getCol($colName, $sql = '', $values = array());
+    function getCol($colName, $sql = '', $values = array());
 
     /**
      * 查询一条记录中单个字段的值
@@ -137,7 +137,7 @@ interface DB_Adapter
      *
      * @return string $singleValue value from cell
      */
-    public function getCell($cellName, $sql = '', $values = array());
+    function getCell($cellName, $sql = '', $values = array());
 
     /**
      * 得到一个关联数组结果集
@@ -148,7 +148,7 @@ interface DB_Adapter
      *
      * @return array $associativeArray associative array result set
      */
-    public function getAssoc($sql = '', $values = array());
+    function getAssoc($sql = '', $values = array());
 
     /**
      * 得到一个索引数组结果集
@@ -159,7 +159,7 @@ interface DB_Adapter
      *
      * @return array $associativeArray associative array result set
      */
-    public function getArray($sql = '', $values = array());
+    function getArray($sql = '', $values = array());
 
     /**
      * 关闭连接释放资源
@@ -168,6 +168,6 @@ interface DB_Adapter
      *
      * @return void
      */
-    public function close($handler);
+    function close();
 
 }// END class Db_Adapter
