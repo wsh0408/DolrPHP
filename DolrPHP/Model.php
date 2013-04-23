@@ -37,6 +37,6 @@ class Model
 
         $tableName = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', $tableName));
         $tableName = strpos($tableName, $prefix) === FALSE ? $prefix . $tableName : $tableName;
-        parent::__construct($tableName);
+        return Db::dispense($tableName);
     }
 } // END class Model
