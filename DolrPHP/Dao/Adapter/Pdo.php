@@ -14,244 +14,47 @@
 /**
  * DB PDO类
  **/
-class Db_Adapter_Pdo implements Db_Adapter
+class Db_Adapter_Pdo extends Db_Adapter
 {
 
     /**
-     * writer
-     *
-     * @var resource
-     */
-    private $_writer;
-
-
-     /**
-     * reader
-     *
-     * @var resource
-     */
-    private $_reader;
-
-    /**
-     * 表结构
-     *
-     * @var array
-     */
-    private $_tableMeta;
-
-    /**
-     * 最后插入的数据ID
-     *
-     * @var integer
-     **/
-    private $_lastInsertId;
-
-    /*private $*/
-
-    public function __construct(PDO $writer, PDO $reader = null)
-    {
-        if (!is_null($this->writer)) {
-            return;
-        }
-        self::$writer = $writer;
-        if ($reader) {
-            self::$reader = $reader;
-        } else {
-            self::$reader = $writer;
-        }
-    }
-
-    /**
-     * 实例化一个表
-     *
-     * @param string $tableName table name
-     *
-     * @return
-     */
-    public function dispenseTable($tableName)
-    {
-        $this->tableName = $tableName;
-    }
-
-    /**
-     * 获取表
-     *
-     * @param string $tableName table name
-     *
-     * @return array
-     */
-    public function getTableMetaInfo($tableName)
-    {
-        $sql = "DESCRIBE {$tableName}";
-        $this->query($sql);
-    }
-
-    /**
-     * 执行一个SQL查询
+     * 执行一个SQL查询,返回结果集
      *
      * @param string $sql    SQL
      * @param array  $values values to bind
+     * @param PDO    $values connector 
      *
      * @return mixed
      */
-    public function exec($sql, $values = array())
+    public function exec($sql, $values = array(), $connector)
     {
-
+        try {
+            $stmt = $connector->prepare($sql);
+            $stmt->execute($values);
+            return $stmt;
+        } catch (Exception $e) {
+            throw $e;
+        }
     }
 
-    /**
-     * 执行一个SQL查询
-     *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
-     *
-     * @return mixed
-     */
-    public function query($sql, $values = array()){
-
-    }
-
-    /**
-     * 添加记录
-     *
-     * @param array $data 关联数组[字段 => 值]
-     *
-     * @return int
-     */
-    public function add($data)
+    protected function fetchArray($stmt)
     {
-
+        return $stmt->fetch(PDO::FETCH_BOTH);
     }
 
-    /**
-     * 删除记录
-     *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
-     *
-     * @return bool
-     */
-    public function del($sql = '', $values = array())
+    protected function fetchNum($stmt)
     {
-
+        return $stmt->fetch(PDO::FETCH_NUM);
     }
 
-    /**
-     * 获取一条记录 , getRow别名方法
-     *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
-     *
-     * @return array
-     */
-    public function find($sql = '', $values = array())
+    protected function fetchAssoc($stmt)
     {
-
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * 查询多条记录
-     *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
-     *
-     * @return array
-     */
-    public function select($sql = '', $values = array())
+    protected function fetchObject($stmt)
     {
-
-    }
-
-
-    /**
-     * 更新记录
-     *
-     * @param array  $data
-     * @param string $sql
-     * @param array  $values
-     *
-     * @return bool|mixed
-     */
-    public function save($data = array(), $sql = ''){
-
-    }
-
-    /**
-     * 查询一条记录，返回二维数组
-     *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
-     *
-     * @return array
-     */
-    public function getRow($sql = '', $values = array()){
-
-    }
-
-    /**
-     * 查询满足条件的所有
-     * @param string $sql      SQL
-     * @param array  $values   values to bind
-     *
-     * @return array
-     */
-    public function getAll($sql = '', $values = array()){
-
-    }
-
-    /**
-     * 查询一列值，返回一维数组
-     * @param string $colName   field name
-     * @param string $sql       SQL
-     * @param array  $values    values to bind
-     *
-     * @return array
-     */
-    public function getCol($colName, $sql = '', $values = array()){
-
-    }
-
-    /**
-     * 查询一条记录中单个字段的值
-     * 此方法会返回一条记录中一个字段的值，常用于查询一个具体的值
-     * 比如查询用户表里id = 1 的用户名（username），将会返回一个具体的string 值
-     *
-     * @param string $cellName cell name
-     * @param string $sql      SQL
-     * @param array  $values   values to bind
-     *
-     * @return string $singleValue value from cell
-     */
-    public function getCell($cellName, $sql = '', $values = array()){
-
-    }
-
-    /**
-     * 得到一个关联数组结果集
-     * 此方法只适用于单条记录，多条记录不适用
-     *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
-     *
-     * @return array $associativeArray associative array result set
-     */
-    public function getAssoc($sql = '', $values = array())
-    {
-
-    }
-
-    /**
-     * 得到一个索引数组结果集
-     * 此方法只适用于单条记录，多条记录不适用
-     *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
-     *
-     * @return array $associativeArray associative array result set
-     */
-    public function getArray($sql = '', $values = array())
-    {
-
+        return $stmt->fetch(PDO::FETCH_OBJ);
     }
 
     /**

@@ -29,6 +29,13 @@ class Db
                         );
 
     /**
+     * 适配器对象
+     * 
+     * @var object|resource
+     */
+    protected static $_adapter = null;
+
+    /**
      * 数据表前缀
      *
      * @var string
@@ -70,13 +77,13 @@ class Db
         spl_autoload_register('self::_daoAutoLoader');
         try {
             //连接资源
-            self::$db['writer'] = self::_setConnector($writerConfig, 'writer');
+            self::_setConnector($writerConfig, 'writer');
             if (!is_array($readerConfig)) {
                 self::$db['reader'] = &self::$db['writer'];
                 return;
             }
-            //主从不分离
-            self::$db['reader'] = self::_setConnector($readerConfig, 'reader');
+            //主从分离
+            self::_setConnector($readerConfig, 'reader');
         } catch (Exception $e) {
             throw $e;
         }
@@ -91,14 +98,16 @@ class Db
      */
     public static function dispense($tableName)
     {
-        $engine = ucfirst(strtolower(self::getEnableEngine()));
-        $adapter = 'DB_Adapter_' . $engine;
         self::_getTableName($tableName);
         try {
-            //实例化适配器
-            $adapterObj = new $adapter(self::$db['writer'], self::$db['reader']);
-            $adapterObj->dispenseTable($tableName);
-            return $adapterObj;
+            if (is_null(self::$_adapter)) {
+                $engine = ucfirst(strtolower(self::getEnableEngine()));
+                $adapter = 'DB_Adapter_' . $engine;
+                //实例化适配器
+                self::$_adapter = new $adapter(self::$db['writer'], self::$db['reader']);
+            }
+            self::$_adapter->dispenseTable($tableName);
+            return self::$_adapter;
         } catch (Exception $e) {
             throw $e;
         }
@@ -113,7 +122,7 @@ class Db
      */
     private static function _getTableName($tableName)
     {
-        if (strpos($tableName, self::$tablePrefix) == 0) {
+        if (!empty(self::$tablePrefix) && strpos($tableName, self::$tablePrefix) === 0) {
             return $tableName;
         }
         return self::$tablePrefix . $tableName;
