@@ -30,7 +30,7 @@ class Db
 
     /**
      * 适配器对象
-     * 
+     *
      * @var object|resource
      */
     protected static $_adapter = null;
@@ -78,6 +78,9 @@ class Db
         try {
             //连接资源
             self::_setConnector($writerConfig, 'writer');
+            if (isset($writerConfig['prefix'])) {
+                self::$tablePrefix = $writerConfig['prefix'];
+            }
             if (!is_array($readerConfig)) {
                 self::$db['reader'] = &self::$db['writer'];
                 return;
@@ -98,7 +101,7 @@ class Db
      */
     public static function dispense($tableName)
     {
-        self::_getTableName($tableName);
+        $tableName = self::_getTableName($tableName);
         try {
             if (is_null(self::$_adapter)) {
                 $engine = ucfirst(strtolower(self::getEnableEngine()));
@@ -144,7 +147,7 @@ class Db
         if(self::$db[$object])
             return true;
         try {
-            $config['charset'] = isset($config['charset']) ? $config['charset'] : 'utf-8';
+            $config['charset'] = isset($config['charset']) ? $config['charset'] : 'utf8';
             self::$db[$object] = self::connect($config['host'], $config['user'],
                                     $config['pass'], $config['dbname'], $config['charset']);
         } catch (Exception $e) {
@@ -217,12 +220,10 @@ class Db
     {
         try {
             $dsn = self::_createDSN($host, $dbName);
-            $pdo = new PDO($dsn, $user, $pass);
-            $pdo->setAttribute(1002, 'SET NAMES ' . $charset);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-            $pdo->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, TRUE);
-
+            $initCommond = array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES '.$charset);
+            $pdo = new PDO($dsn, $user, $pass, $initCommond);
+            $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+            $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
             return $pdo;
         } catch (Exception $e) {
             throw $e;

@@ -20,50 +20,67 @@ class Db_Adapter_Pdo extends Db_Adapter
     /**
      * 执行一个SQL查询,返回结果集
      *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
-     * @param PDO    $values connector 
+     * @param string $sql       SQL
+     * @param array  $params    values to bind
+     * @param PDO    &$connector connector
      *
      * @return mixed
      */
-    public function exec($sql, $values = array(), $connector)
+    public function exec($sql, array $params = array())
     {
         try {
-            $stmt = $connector->prepare($sql);
-            $stmt->execute($values);
+            $stmt = $this->_connector->prepare($sql);
+            if (empty($params)) {
+                $stmt->execute();
+            } else {
+                $stmt->execute(array_values($params));
+            }
             return $stmt;
-        } catch (Exception $e) {
+        } catch (PDOException $e) {
             throw $e;
         }
     }
 
     protected function fetchArray($stmt)
     {
-        return $stmt->fetch(PDO::FETCH_BOTH);
+        return $this->fetchResult($stmt,PDO::FETCH_BOTH);
     }
 
     protected function fetchNum($stmt)
     {
-        return $stmt->fetch(PDO::FETCH_NUM);
+        return $this->fetchResult($stmt,PDO::FETCH_NUM);
     }
 
     protected function fetchAssoc($stmt)
     {
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        return $this->fetchResult($stmt,PDO::FETCH_ASSOC);
     }
 
     protected function fetchObject($stmt)
     {
-        return $stmt->fetch(PDO::FETCH_OBJ);
+        return $this->fetchResult($stmt,PDO::FETCH_OBJ);
     }
 
-    /**
-     * 关闭连接释放资源
-     *
-     * @param resource $handler database resource
-     *
-     * @return void
-     */
+    protected function fetchResult($stmt, $fetchStyle = PDO::FETCH_ASSOC)
+    {
+        $arr = array();
+        while ($row = $stmt->fetch($fetchStyle)) {
+            $arr[] = $row;
+        }
+
+        return $arr;
+    }
+
+    protected function getInsertId()
+    {
+        return $this->_connector->lastInsertId();
+    }
+
+    protected function getAffectedRows($stmt)
+    {
+        return $stmt->rowCount($stmt);
+    }
+
     public function close()
     {
         # code...
