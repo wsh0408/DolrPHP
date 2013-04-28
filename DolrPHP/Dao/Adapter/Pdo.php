@@ -35,7 +35,7 @@ class Db_Adapter_Pdo extends Db_Adapter
             } else {
                 $stmt->execute(array_values($params));
             }
-            return $stmt;
+            return $this->stmt = $stmt;
         } catch (PDOException $e) {
             throw $e;
         }
@@ -43,25 +43,25 @@ class Db_Adapter_Pdo extends Db_Adapter
 
     protected function fetchArray($stmt)
     {
-        return $this->fetchResult($stmt,PDO::FETCH_BOTH);
+        return $this->_fetchResult($stmt,PDO::FETCH_BOTH);
     }
 
     protected function fetchNum($stmt)
     {
-        return $this->fetchResult($stmt,PDO::FETCH_NUM);
+        return $this->_fetchResult($stmt,PDO::FETCH_NUM);
     }
 
     protected function fetchAssoc($stmt)
     {
-        return $this->fetchResult($stmt,PDO::FETCH_ASSOC);
+        return $this->_fetchResult($stmt,PDO::FETCH_ASSOC);
     }
 
     protected function fetchObject($stmt)
     {
-        return $this->fetchResult($stmt,PDO::FETCH_OBJ);
+        return $this->_fetchResult($stmt,PDO::FETCH_OBJ);
     }
 
-    protected function fetchResult($stmt, $fetchStyle = PDO::FETCH_ASSOC)
+    protected function _fetchResult($stmt, $fetchStyle = PDO::FETCH_ASSOC)
     {
         $arr = array();
         while ($row = $stmt->fetch($fetchStyle)) {
@@ -76,9 +76,9 @@ class Db_Adapter_Pdo extends Db_Adapter
         return $this->_connector->lastInsertId();
     }
 
-    protected function getAffectedRows($stmt)
+    protected function getAffectedRows()
     {
-        return $stmt->rowCount($stmt);
+        return $this->stmt->rowCount();
     }
 
     public function close()

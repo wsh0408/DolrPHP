@@ -29,10 +29,10 @@ abstract class DB_Adapter
     /**
      * SQL TYPE
      */
-    const SQL_TYPE_INSERT = 1;
-    const SQL_TYPE_DELETE = 2;
-    const SQL_TYPE_UPDATE = 3;
-    const SQL_TYPE_SELECT = 4;
+    const SQL_TYPE_INSERT = 'insert';
+    const SQL_TYPE_DELETE = 'delete';
+    const SQL_TYPE_UPDATE = 'update';
+    const SQL_TYPE_SELECT = 'select';
 
     /**
      * log type
@@ -175,15 +175,14 @@ abstract class DB_Adapter
             throw new Exception("未选择目标数据表[{$action}]", 1);
         }
         //清空values
-        $this->_toBindValues = array();
         $output = array();
         foreach ($data as $key => $value) {
             if (!in_array($key, $this->_tableMeta['_fields'])) {
                 continue;
             }
             $output[$key] = $value;
-            $this->_toBindValues[] = $value;
         }
+
         return $output;
     }
 
@@ -191,41 +190,64 @@ abstract class DB_Adapter
      * 执行一个完整SQL查询
      *
      * @param string $sql    SQL
-     * @param array  $values values to bind
+     * @param array  $params values to bind
      *
      * @return mixed
      */
-    public function query($sql, array $values = array(), $fetch = self::FETCH_ALL, $fetchType = self::FETCH_TYPE_ASSOC)
+    public function query($sql, array $params = array(), $fetch = self::FETCH_ALL, $fetchType = self::FETCH_TYPE_ASSOC)
     {
         $sqlType = preg_match('/([a-z]+)\s+/i', $sql, $matches);
         switch (strtoupper($matches[1])) {
             case 'INSERT':
                 $this->_connector = &$this->_writer;
-                $this->exec($sql, $values);
+                $this->exec($sql, $params);
                 $ret = $this->getInsertId();
                 break;
             case 'DELETE':
             case 'UPDATE':
                 $this->_connector = &$this->_writer;
-                $res = $this->exec($sql, $values);
+                $res = $this->exec($sql, $params);
                 $ret = $this->getAffectedRows($res);
                 break;
             default:
                 $this->_connector = &$this->_reader;
-                $res = $this->exec($sql, $values);
+                $res = $this->exec($sql, $params);
                 $ret = $this->fetch($res, $fetch, $fetchType);
                 break;
         }
-
+        $this->_setLastSql($sql, $params);
         return $ret;
+    }
+
+    /**
+     * 设置最后一次查询的SQL
+     *
+     * @param string $sql    SQL
+     * @param array  $params values to bind
+     *
+     * @return void
+     */
+    protected function _setLastSql($sql, $params)
+    {
+        // 拼装一个完整的SQL用于调试
+        foreach ($params as $key => &$value) {
+            if (!is_numeric($value) && mb_strlen($value) > 10) {
+                $value = addcslashes(mb_substr($value, 0, 10), "'");
+                $value = "{$value}...";//不用显示全部
+            }
+            $value = "'{$value}'";
+        }
+        $sqlFormat = str_replace('?', "%s", $sql);
+        array_unshift($params, $sqlFormat);
+        $this->_lastSql = call_user_func_array('sprintf', $params);
     }
 
     /**
      * 提取结果集
      *
-     * @param resource  $resource   query resource
-     * @param string    $fetch     one | all
-     * @param string    $fetchType fetch type [array, num, assoc, object]
+     * @param resource $resource  query resource
+     * @param string   $fetch     one | all
+     * @param string   $fetchType fetch type [array, num, assoc, object]
      *
      * @return array or boolean
      */
@@ -245,7 +267,7 @@ abstract class DB_Adapter
                 $res = $this->fetchObject($resource);
                 break;
             case self::FETCH_TYPE_ARRAY:
-                $res = $this->fetchAssoc($resource);
+                $res = $this->fetchArray($resource);
                 break;
             default:
                 $res = false;
@@ -377,13 +399,28 @@ abstract class DB_Adapter
     /**
      * 查询一列值，返回一维数组
      *
-     * @param string $colName   field name
-     * @param string $sql       SQL
-     * @param array  $values    values to bind
+     * @param string  $colName      field name
+     * @param boolean $convertTo2D  trans the result to Two-dimension array
+     * @param string  $sql          SQL
+     * @param array   $values       values to bind
      *
+     * @example
+     * <pre>
+     *  if set $converTo2D false(default)
+     *  for example $colName = 'user';
+     *  output like below:
+     *  array(
+     *      0 => array('user' => 'userA'),
+     *      1 => array('user' => 'userB'),
+     *      2 => array('user' => 'userC'),
+     *      3 => array('user' => 'userD'),
+     *     );
+     *  else if $convetTo2D is true:
+     *  array('userA', 'userB', 'userC', 'userD',);
+     * </pre>
      * @return array
      */
-    public function getCol($colName, $sql = '', array $values = array())
+    public function getCol($colName, $convertTo2D = false, $sql = '', array $values = array())
     {
         if (!in_array($colName, $this->_tableMeta['_fields'])) {
             $this->_log("表'{$this->_tableMeta['_name']}'不存在字段'{$colName}'");
@@ -392,9 +429,9 @@ abstract class DB_Adapter
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
         $result = $this->query($sql, $values, self::FETCH_ALL);
         $cols = array();
-        foreach ($result as $key => $value) {
-            if (!isset($value[$colName])) {
-                $cols[$key] = $value[$colName];
+        foreach ($result as $value) {
+            if (isset($value[$colName])) {
+                $cols[][$colName] = $value[$colName];
             }
         }
 
@@ -482,23 +519,24 @@ abstract class DB_Adapter
         if (empty($field) || !is_array($field, $this->_tableMeta['_fields'])) {
             $field = $this->_tableMeta['_pk'];
         }
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        $sql = "SELECT COUNT(`{$field}`) AS `count` FROM `{$this->_tableMeta['_name']}` {$sql}";
+        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values, "COUNT(`{$field}`) AS `count`");
         $res = $this->query($sql, $values);
-        if ($res && isset($res[$cellName])) {
-            return $res[$cellName];
+        if ($res) {
+            $res = array_shift($res);
+            return $res['count'];
         }
     }
 
     /**
      * 返回完整的SQL语句
      *
-     * @param  string $sqlType sql type
-     * @param  string $sql     sql width ?
-     * @param  array  $data    data to bind
+     * @param  string $sqlType   sql type
+     * @param  string $sql       sql width '?'
+     * @param  array  $data      data to bind
+     * @param  array  $fieldArea field set,default is *
      * @return string
      */
-    protected function _createSql($sqlType, $sql, $data = array())
+    protected function _createSql($sqlType, $sql, $data = array(), $fieldArea = '*')
     {
         if (!empty($data)) {
             $data = $this->_filterFields($data);
@@ -506,7 +544,7 @@ abstract class DB_Adapter
         }
         switch ($sqlType) {
             case self::SQL_TYPE_SELECT:
-                $sql = "SELECT * FROM `{$this->_tableMeta['_name']}` {$sql}";
+                $sql = "SELECT {$fieldArea} FROM `{$this->_tableMeta['_name']}` {$sql}";
                 break;
             case self::SQL_TYPE_DELETE:
                 $sql = "DELETE FROM `{$this->_tableMeta['_name']}` {$sql}";
@@ -527,17 +565,6 @@ abstract class DB_Adapter
             default:
                 break;
         }
-        // 拼装一个完整的SQL用于调试
-        foreach ($data as $key => &$value) {
-            if (!is_numeric($value) && mb_strlen($value) > 10) {
-                $value = addcslashes(mb_substr($value, 0, 10), "'");
-                $value = "{$value}...";//不用显示全部
-            }
-            $value = "'{$value}'";
-        }
-        $sqlFormat = str_replace('?', "%s", $sql);
-        array_unshift($data, $sqlFormat);
-        $this->_lastSql = call_user_func_array('sprintf', $data);
 
         return $sql;
     }
@@ -561,6 +588,43 @@ abstract class DB_Adapter
     }
 
     /**
+     * 魔术方法
+     * 只适用于单条记录
+     * getBy+首字母大写的字段名
+     *
+     * @example
+     * <pre>
+     * $obj->getByUsername('admin')
+     * $obj->getById(5)
+     * $obj->getByFIldName('hello');
+     * ...
+     * </pre>
+     *
+     * @param string $methodName 字段名
+     * @param mx  $
+     *
+     * @return mixed
+     */
+    public function __call($methodName, $args)
+    {
+        //实现假继承
+        if (method_exists($this, $methodName)) {
+            return call_user_func_array(array($this, $methodName), $args);
+        }
+
+        //getByUsername
+        if (false === strpos($methodName, 'getBy') or empty($args)) {
+            return false;
+        }
+
+        //取字段名:getByUserName =>user_name,getByPassword => password
+        $field = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', substr($methodName, 5)));
+        $sql   = "WHERE `{$field}` = ?";
+        $value = array_shift($args);
+        return $this->getRow($sql, array($value));
+    }
+
+    /**
      * log
      *
      * @param string $string log info
@@ -578,7 +642,7 @@ abstract class DB_Adapter
     abstract protected function fetchObject($resource);
     abstract protected function exec($sql, array $values = array());
     abstract protected function getInsertId();
-    abstract protected function getAffectedRows($resource);
+    abstract protected function getAffectedRows();
     abstract protected function close();
 
 }// END class Db_Adapter

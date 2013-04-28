@@ -19,6 +19,14 @@ class Db
 {
 
     /**
+     * engine type
+     */
+    const ENGINT_PDO    = 'PDO';
+    const ENGINT_MYSQLI = 'mysqli';
+    const ENGINT_MYSQL  = 'mysql';
+    const ENGINT_NONE   = '';
+
+    /**
      * 数据库连接实例
      *
      * @var array
@@ -34,6 +42,13 @@ class Db
      * @var object|resource
      */
     protected static $_adapter = null;
+
+    /**
+     * 引擎类型
+     *
+     * @var string
+     */
+    protected static $_engine = '';
 
     /**
      * 数据表前缀
@@ -69,11 +84,12 @@ class Db
      *
      * @return void
      */
-    public static function initialize(array $writerConfig, array $readerConfig = null)
+    public static function initialize(array $writerConfig, $engine = self::ENGINT_NONE, array $readerConfig = null)
     {
         if (self::$db['writer']) {
             return;
         }
+        self::$_engine = self::getEnableEngine($engine);
         spl_autoload_register('self::_daoAutoLoader');
         try {
             //连接资源
@@ -104,8 +120,7 @@ class Db
         $tableName = self::_getTableName($tableName);
         try {
             if (is_null(self::$_adapter)) {
-                $engine = ucfirst(strtolower(self::getEnableEngine()));
-                $adapter = 'DB_Adapter_' . $engine;
+                $adapter = 'DB_Adapter_' . ucfirst(self::$_engine);
                 //实例化适配器
                 self::$_adapter = new $adapter(self::$db['writer'], self::$db['reader']);
             }
@@ -148,7 +163,7 @@ class Db
             return true;
         try {
             $config['charset'] = isset($config['charset']) ? $config['charset'] : 'utf8';
-            self::$db[$object] = self::connect($config['host'], $config['user'],
+            self::$db[$object] = self::_connect($config['host'], $config['user'],
                                     $config['pass'], $config['dbname'], $config['charset']);
         } catch (Exception $e) {
             throw $e;
@@ -168,14 +183,10 @@ class Db
      *
      * @return object
      */
-    public static function connect($host, $user, $pass, $dbName, $charset = 'utf8')
+    private static function _connect($host, $user, $pass, $dbName, $charset = 'utf8')
     {
-        $enableEngine = self::getEnableEngine();
-        if (!$enableEngine) {
-            throw new Exception('没有可用的数据库连接工具');
-        }
         try {
-            switch (strtolower($enableEngine)) {
+            switch (strtolower(self::$_engine)) {
                 case 'pdo': // pdo
                     return self::getPdo($host, $user, $pass, $dbName, $charset);
                     break;
@@ -284,7 +295,7 @@ class Db
      *
      * @return string
      */
-    protected static function _createDSN($host, $dbName)
+    private static function _createDSN($host, $dbName)
     {
         return "mysql:host={$host};dbname={$dbName}";
     }
@@ -292,10 +303,15 @@ class Db
     /**
      * 获取可用的数据库引擎
      *
+     * @param string $engine engine type
+     *
      * @return bool|string
      */
-    protected static function getEnableEngine()
+    public static function getEnableEngine($engine)
     {
+        if (!empty($engine)) {
+            return $engine;
+        }
         if (extension_loaded('PDO')) {
             return 'pdo';
         } else if (extension_loaded('mysqli')) {
@@ -303,7 +319,7 @@ class Db
         } else if (extension_loaded('mysql')) {
             return 'mysql';
         } else {
-            return false;
+            throw new Exception('没有可用的数据库连接工具');
         }
     }
 
@@ -324,40 +340,4 @@ class Db
         return $data;
     }
 
-
-    /**
-     * 魔术方法
-     * 只适用于单条记录
-     * getBy+首字母大写的字段名
-     *
-     * @example
-     * <pre>
-     * $obj->getByUsername('admin')
-     * $obj->getById(5)
-     * $obj->getByFIldName('hello');
-     * ...
-     * </pre>
-     *
-     * @param string $methodName 字段名
-     * @param mx  $
-     *
-     * @return mixed
-     */
-    public function __call($methodName, $args)
-    {
-        //实现假继承
-        if (is_callable(array(self::$adapter, $methodName))) {
-            return call_user_func_array(array($this->adapter, $methodName), $args);
-        }
-
-        //getByUsername
-        if (false === strpos($methodName, 'getBy')) {
-            return false;
-        }
-
-        //取字段名:getByUserName =>user_name,getByPassword => password
-        $field = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', substr($methodName, 5)));
-        $sql   = "`{$field}` = ?";
-        return self::$adapter->getRow($sql, $args);
-    }
 }

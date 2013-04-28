@@ -14,28 +14,93 @@
 /**
  * DB Mysqli类
  **/
-class Db_Adapter_Mysqli implements Db_Adapter
+class Db_Adapter_Mysqli extends Db_Adapter
 {
-    /**
-     * 数据库连接对象
-     *
-     * @var object
-     **/
-    public $instance = NULL;
 
     /**
-     * 最后插入的数据ID
+     * 执行一个SQL查询,返回结果集
      *
-     * @var integer
-     **/
-    public $lastInertId;
-
-    /**
-     * 当前表信息
+     * @param string $sql       SQL
+     * @param array  $params    values to bind
+     * @param PDO    &$connector connector
      *
-     * @var array
-     **/
-    public $table = array();
+     * @return mixed
+     */
+    public function exec($sql, array $params = array())
+    {
+        try {
+            $stmt = $this->_connector->prepare($sql);
+            if (!empty($params)) {
+                $this->_bindParams($stmt, $params);
+            }
+            $stmt->execute();
+            $this->_lastInsertId = $stmt->insert_id;
+            return $this->stmt = $stmt;
+        } catch (PDOException $e) {
+            throw $e;
+        }
+    }
 
+    protected function _bindParams($stmt, $params)
+    {
+        $types = str_repeat('s', count($params));
+        foreach ($params as $key => &$value) {
+            $value = &$value;
+        }
+        array_unshift($params, $types);
+        call_user_func_array(array($stmt,'bind_param'), $params);
+    }
 
-} // END class Db_Adapter_Mysqli
+    protected function fetchArray($stmt)
+    {
+        return $this->_fetchResult($stmt,'array');
+    }
+
+    protected function fetchNum($stmt)
+    {
+        return $this->_fetchResult($stmt,'num');
+    }
+
+    protected function fetchAssoc($stmt)
+    {
+        return $this->_fetchResult($stmt,'assoc');
+    }
+
+    protected function fetchObject($stmt)
+    {
+        return $this->_fetchResult($stmt,'object');
+    }
+
+    protected function _fetchResult($stmt, $fetchStyle)
+    {
+        if (!method_exists($stmt, 'get_result')) {
+            return false;
+        }
+        $result = $stmt->get_result();
+        $fetchFunc = 'fetch_' . strtolower($fetchStyle);
+        if (!method_exists($result, $fetchFunc)) {
+            return false;
+        }
+        $arr = array();
+        while ($row = $result->$fetchFunc()) {
+            $arr[] = $row;
+        }
+        return $arr;
+    }
+
+    protected function getInsertId()
+    {
+        return $this->lastInsertId;
+    }
+
+    protected function getAffectedRows()
+    {
+        return $this->stmt->affected_rows;
+    }
+
+    public function close()
+    {
+        # code...
+    }
+
+} // END class Db_Adapter_Pdo
