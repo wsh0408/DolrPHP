@@ -29,7 +29,8 @@ class Db_Adapter_Mysqli extends Db_Adapter
     public function exec($sql, array $params = array())
     {
         try {
-            $stmt = $this->_connector->prepare($sql);
+            $stmt = $this->_connector->stmt_init();
+            $stmt->prepare($sql);
             if (!empty($params)) {
                 $this->_bindParams($stmt, $params);
             }
@@ -85,6 +86,7 @@ class Db_Adapter_Mysqli extends Db_Adapter
         while ($row = $result->$fetchFunc()) {
             $arr[] = $row;
         }
+
         return $arr;
     }
 

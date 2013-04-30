@@ -19,8 +19,6 @@ abstract class DB_Adapter
     /**
      * FETCH TYPE
      */
-    const FETCH_ALL         = 'all';
-    const FETCH_ONE         = 'one';
     const FETCH_TYPE_ARRAY  = 'array';
     const FETCH_TYPE_NUM    = 'num';
     const FETCH_TYPE_ASSOC  = 'assoc';
@@ -120,6 +118,7 @@ abstract class DB_Adapter
     public function dispenseTable($tableName)
     {
         $tableMeta = $this->_getTableMetaInfo($tableName);
+        var_dump($tableMeta);
         if (!$tableMeta || empty($tableMeta)) {
             throw new Exception("数据表 '{$tableName}' 读取失败", 1);
         }
@@ -137,7 +136,8 @@ abstract class DB_Adapter
      */
     protected function _getTableMetaInfo($tableName)
     {
-        $tableInfo  = $this->query("SHOW COLUMNS FROM `$tableName`");
+        $tableInfo = $this->query("SHOW COLUMNS FROM `$tableName`");
+        var_dump($tableInfo);
         $data = array();
         $data['_name']   = $tableName;
         $data['_fields'] = array();
@@ -189,14 +189,16 @@ abstract class DB_Adapter
     /**
      * 执行一个完整SQL查询
      *
-     * @param string $sql    SQL
-     * @param array  $params values to bind
+     * @param string $sql       SQL
+     * @param array  $params    values to bind
+     * @param array  $fetchType fetch type (assoc|num|array|object)
      *
      * @return mixed
      */
-    public function query($sql, array $params = array(), $fetch = self::FETCH_ALL, $fetchType = self::FETCH_TYPE_ASSOC)
+    public function query($sql, array $params = array(), $fetchType = self::FETCH_TYPE_ASSOC)
     {
         $sqlType = preg_match('/([a-z]+)\s+/i', $sql, $matches);
+        $sql = rtrim($sql, ';');
         switch (strtoupper($matches[1])) {
             case 'INSERT':
                 $this->_connector = &$this->_writer;
@@ -212,10 +214,11 @@ abstract class DB_Adapter
             default:
                 $this->_connector = &$this->_reader;
                 $res = $this->exec($sql, $params);
-                $ret = $this->fetch($res, $fetch, $fetchType);
+                $ret = $this->fetch($res, $fetchType);
                 break;
         }
         $this->_setLastSql($sql, $params);
+
         return $ret;
     }
 
@@ -246,12 +249,11 @@ abstract class DB_Adapter
      * 提取结果集
      *
      * @param resource $resource  query resource
-     * @param string   $fetch     one | all
      * @param string   $fetchType fetch type [array, num, assoc, object]
      *
      * @return array or boolean
      */
-    public function fetch($resource, $fetch, $fetchType)
+    public function fetch($resource, $fetchType)
     {
         if (!is_resource($resource) && !is_object($resource)) {
             return $resource;
@@ -273,13 +275,25 @@ abstract class DB_Adapter
                 $res = false;
                 break;
         }
-        if (!$res) {
+        if (false === $res) {
             return false;
         }
-        if ($fetch == self::FETCH_ONE) {
-            return array_shift($res);
-        }
+
         return $res;
+    }
+
+    /**
+     * 提取数组中的第一个元素
+     *
+     * @param array $array 结果数组
+     * @return mixed
+     */
+    public function fetchOne($array)
+    {
+        if (empty($array)) {
+            return $array;
+        }
+        return array_shift($array);
     }
 
     /**
@@ -295,7 +309,7 @@ abstract class DB_Adapter
      *
      * @return int
      */
-    public function add($data)
+    public function add(array $data)
     {
         $sql = $this->_createSql(self::SQL_TYPE_INSERT, '', $data);
         $res = $this->query($sql,$data);
@@ -316,7 +330,7 @@ abstract class DB_Adapter
     public function del($sql, array $values = array())
     {
         $sql = $this->_createSql(self::SQL_TYPE_DELETE, $sql, $values);
-        return $this->query($sql,$values);
+        return $this->query($sql, $values);
     }
 
     /**
@@ -324,13 +338,14 @@ abstract class DB_Adapter
      *
      * @param string $sql    SQL
      * @param array  $values values to bind
-     *
+     * @param array  $fetchType fetch type (assoc|num|array|object)
      * @return array
      */
-    public function find($sql = '', array $values = array())
+    public function find($sql = '', array $values = array(), $fetchStyle = self::FETCH_TYPE_ASSOC)
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql);
-        return $this->query($sql,$values, self::FETCH_ONE);
+        $sql .= " LIMIT 1";
+        return $this->fetchOne($this->query($sql, $values, $fetchStyle));
     }
 
     /**
@@ -338,13 +353,13 @@ abstract class DB_Adapter
      *
      * @param string $sql    SQL
      * @param array  $values values to bind
-     *
+     * @param array  $fetchType fetch type (assoc|num|array|object)
      * @return array
      */
-    public function select($sql = '', array $values = array())
+    public function select($sql = '', array $values = array(), $fetchStyle = self::FETCH_TYPE_ASSOC)
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql);
-        return $this->query($sql,$values, self::FETCH_ALL);
+        return $this->query($sql, $values, $fetchStyle);
     }
 
 
@@ -380,7 +395,8 @@ abstract class DB_Adapter
     public function getRow($sql = '', array $values = array())
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        return $this->query($sql, $values, self::FETCH_ONE);
+        $sql .= " LIMIT 1";
+        return $this->fetchOne($this->query($sql, $values));
     }
 
     /**
@@ -390,10 +406,10 @@ abstract class DB_Adapter
      *
      * @return array
      */
-    public function getAll($sql = '', array $values = array())
+    public function getAll($sql = '', array $values = array(), $fetchStyle = self::FETCH_TYPE_ASSOC)
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        return $this->query($sql, $values, self::FETCH_ALL);
+        return $this->query($sql, $values, $fetchStyle);
     }
 
     /**
@@ -427,15 +443,17 @@ abstract class DB_Adapter
             return false;
         }
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        $result = $this->query($sql, $values, self::FETCH_ALL);
+        $result = $this->query($sql, $values);
         $cols = array();
+        $cols2D = array();
         foreach ($result as $value) {
             if (isset($value[$colName])) {
                 $cols[][$colName] = $value[$colName];
+                $cols2D[] = $value[$colName];
             }
         }
 
-        return $cols;
+        return $convertTo2D ? $cols2D : $cols;
     }
 
     /**
@@ -451,8 +469,9 @@ abstract class DB_Adapter
      */
     public function getCell($cellName, $sql = '', array $values = array())
     {
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        $res = $this->query($sql, $values, self::FETCH_ONE);
+        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values, "`$cellName`");
+        $sql .= "LIMIT 1";
+        $res = $this->fetchOne($this->query($sql, $values));
         if ($res && isset($res[$cellName])) {
             return $res[$cellName];
         }
@@ -472,7 +491,8 @@ abstract class DB_Adapter
     public function getAssoc($sql = '', array $values = array())
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        return $this->query($sql, $values, self::FETCH_ONE, self::FETCH_TYPE_ASSOC);
+        $sql .= "LIMIT 1";
+        return $this->fetchOne($this->query($sql, $values, self::FETCH_TYPE_ASSOC));
     }
 
     /**
@@ -487,7 +507,8 @@ abstract class DB_Adapter
     public function getObject($sql = '', array $values = array())
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        return $this->query($sql, $values, self::FETCH_ONE, self::FETCH_TYPE_OBJECT);
+        $sql .= "LIMIT 1";
+        return $this->fetchOne($this->query($sql, $values, self::FETCH_TYPE_OBJECT));
     }
 
     /**
@@ -502,7 +523,7 @@ abstract class DB_Adapter
     public function getObjects($sql = '', array $values = array())
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        return $this->query($sql, $values, self::FETCH_ALL, self::FETCH_TYPE_OBJECT);
+        return $this->query($sql, $values, self::FETCH_TYPE_OBJECT);
     }
 
     /**
@@ -520,9 +541,9 @@ abstract class DB_Adapter
             $field = $this->_tableMeta['_pk'];
         }
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values, "COUNT(`{$field}`) AS `count`");
-        $res = $this->query($sql, $values);
+        $sql .= "LIMIT 1";
+        $res = $this->fetchOne($this->query($sql, $values));
         if ($res) {
-            $res = array_shift($res);
             return $res['count'];
         }
     }
@@ -544,10 +565,10 @@ abstract class DB_Adapter
         }
         switch ($sqlType) {
             case self::SQL_TYPE_SELECT:
-                $sql = "SELECT {$fieldArea} FROM `{$this->_tableMeta['_name']}` {$sql}";
+                $sql = "SELECT {$fieldArea} FROM `{$this->_tableMeta['_name']}` {$sql} ";
                 break;
             case self::SQL_TYPE_DELETE:
-                $sql = "DELETE FROM `{$this->_tableMeta['_name']}` {$sql}";
+                $sql = "DELETE FROM `{$this->_tableMeta['_name']}` {$sql} ";
                 break;
             case self::SQL_TYPE_UPDATE:
                 $arr = array();
@@ -555,12 +576,12 @@ abstract class DB_Adapter
                     $arr[] = "`{$field}` = ? ";
                 }
                 $setString = join(',', $arr);
-                $sql = "UPDATE `{$this->_tableMeta['_name']}` SET {$setString} {$sql}";
+                $sql = "UPDATE `{$this->_tableMeta['_name']}` SET {$setString} {$sql} ";
                 break;
             case self::SQL_TYPE_INSERT:
                 $keys = join(',', $fields);
                 $valuesFlag = join(',', array_fill(0, count($fields), '?'));
-                $sql = "INSERT INTO `{$this->_tableMeta['_name']}`({$keys}) VALUES({$valuesFlag})";
+                $sql = "INSERT INTO `{$this->_tableMeta['_name']}`({$keys}) VALUES({$valuesFlag}) ";
                 break;
             default:
                 break;
@@ -577,9 +598,12 @@ abstract class DB_Adapter
      */
     public function __get($proName)
     {
-        switch (strtoupper($proName)) {
-            case 'LASTSQL':
+        switch (strtolower($proName)) {
+            case 'lastsql':
                 return $this->_lastSql;
+                break;
+            case 'insertid':
+                return $this->_lastInsertId;
                 break;
             default:
                 # code...

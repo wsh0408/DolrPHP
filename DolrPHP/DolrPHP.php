@@ -21,9 +21,10 @@ if (strlen($_SERVER['DOCUMENT_ROOT']) > strlen($dirOfScriptName) + 1) {
 
 //base
 defined('APP_NAME')  || define('APP_NAME', basename($dirOfScriptName));
-defined('APP_PATH')  || define('APP_PATH', $dirOfScriptName . '/');
+defined('APP_PATH')  || define('APP_PATH', realpath($dirOfScriptName . '/'));
 defined('DOLR_PATH') || define('DOLR_PATH', $dirOfLocal . '/');
-
+defined('APP_ROOT')  || define('APP_ROOT', str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']) . APP_NAME . '/'));
+defined('APP_ABS_PATH')  || define('APP_ABS_PATH', realpath(APP_PATH) . '/');
 //dirs
 define('DB_PATH', DOLR_PATH . 'Dao/');       //DolrPHP 数据库驱动目录
 define('EXT_PATH', DOLR_PATH . 'Extension/');     //DolrPHP 框架拓展目录

@@ -31,7 +31,7 @@
                 <p><span class="t">位置：</span> 第 [LINE] 行</p>
             </div>
             <div class="trace">
-                <ul>[TRACE]</ul>
+                <pre>[TRACE]</pre>
             </div>
         </div>
         <div class="footer">

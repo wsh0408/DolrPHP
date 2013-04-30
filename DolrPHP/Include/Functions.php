@@ -25,8 +25,6 @@ function dolrAutoLoader($className)
         include DB_PATH . 'Db.php';
     } elseif (false !== stripos($className, 'Db_')) { //DB
         include DB_PATH . str_replace('_', '/', substr($className, 3)) . '.php';
-    } else {
-        throw new DolrException('类"' . $className . '"无法加载，文件不存在或名称错误.');
     }
     Trace::L($className, Trace::LOG_TYPE_CLASS);
 }
@@ -142,7 +140,7 @@ function U($alias = '', $params = array())
     $module = trim(array_shift($tmp));
     $action = trim(end($tmp));
 
-    return Dispather::generateUrl($module, $action, $params);
+    return Dispatcher::generateUrl($module, $action, $params);
 }
 
 /**
@@ -154,7 +152,7 @@ function U($alias = '', $params = array())
  *
  * @return void
  */
-function display($data = array(), $tplPath = '', $extract = true)
+function display($tplPath = '', $data = array(), $extract = true)
 {
     //如果没有传入的话
     if ($tplPath == '') {
@@ -165,8 +163,9 @@ function display($data = array(), $tplPath = '', $extract = true)
     if (!stripos($tplPath, '.php')) //没有加后缀的话
         $tplPath .= '.php';
     if ($extract) extract($data); //提取为独立变量
-    Trace::L(C('VIEW_PATH') . $tplPath, Trace::LOG_TYPE_TEMPLATE);
-    include C('VIEW_PATH') . $tplPath;
+    Trace::L(C('TPL_PATH') . $tplPath, Trace::LOG_TYPE_TEMPLATE);
+    include C('TPL_PATH') . $tplPath;
+    return;
 }
 
 /**

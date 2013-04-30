@@ -19,12 +19,6 @@
  **/
 class Controller
 {
-    /**
-     * db object
-     *
-     * @var Db(object)
-     */
-    protected static $db = null;
 
     /**
      * 操作失败提示
@@ -99,7 +93,7 @@ class Controller
      */
     public function set($varName, $data)
     {
-        App::$tplEngine->set($varName, $data);
+        array_merge(App::$template_var, array($varName => $data));
     }
 
     /**
@@ -110,33 +104,25 @@ class Controller
      *
      * @return void
      */
-    public function display($tplPath = '', $cacheId = null)
+    public function display($tplPath = '', $data = array())
     {
-        if (!C('VIEW_ENGINE_ON')) {
-            $this->_error('未开启DolrView模板引擎，如需使用请配置"DOLRVIEW" => true',1);
+        if (!C('TPL_ENGINE_ON')) {
+            display($tplPath, $data);
+            return;
         }
-        $suffix = strval(C('VIEW_SUFFIX'));
         //如果没有传入的话
         if ($tplPath == '') {
-            $Controller  = App::$ControllerName;
-            $action  = App::$actionName;
-            $tplPath = strtolower("{$Controller}/{$action}.{$suffix}");
+            $Controller = App::$controllerName;
+            $action     = App::$actionName;
+            $styleSet   = C('TPL_STYLE');
+            $style      = empty($styleSet) ? '' : $styleSet . '/';
+            $suffix     = C('TPL_SUFFIX');
+            $tplPath    = strtolower("{$style}{$Controller}/{$action}.{$suffix}");
         }
 
-        //如果不是一个具体的文件路径，加上后缀
-        if (!file_exists($tplPath)) {
-            if (!stripos($tplPath, ".{$suffix}")) { //没有加后缀的话
-                $tplPath .= ".{$suffix}";
-            }
-            $tplPath = C('VIEW_STYLE') . $tplPath;
-        }
-
-        if (!file_exists($tplPath)) {
-            throw new DolrException("模板文件'{$tplPath}'不存在！");
-        }
         $this->_log($tplPath, Trace::LOG_TYPE_TEMPLATE);
         try {
-            App::$tplEngine->display($tplPath, $cacheId);
+            App::$tplEngine->display($tplPath, App::$template_var);
         } catch (DolrException $e) {
             throw $e;
         }
@@ -147,15 +133,49 @@ class Controller
      *
      * @param string $url 完整的URL
      *
+     * @example
+     * <pre>
+     * $this->go('@Login:index');
+     * $this->go('http://www.dolrphp.com');
+     * </pre>
+     *
      * @return void
      */
     public function go($url)
     {
+        if (stripos($url, '@') === 0) {
+            $arr = explode(':', trim($url, '@'));
+            if (empty($arr)) {
+                return false;
+            }
+            $url = Dispatcher::generateUrl($arr[0], $arr[1]);
+        }
         if (headers_sent()) {
             echo '<script>window.location.href="' . $url . '";</script>';
         } else {
             header('Location:' . $url);
         }
+    }
+
+    /**
+     * 添加模板函数
+     *
+     * @param string|array $function 要添加的函数，可是使用字符串或者数组
+     * App::addTemplateFunction(
+     *                      array('url' => 'U'),
+     *                      array('xxx' => 'xxxx'),
+     *                       ...
+     *                     );
+     * in template:
+     * {% url('Actor/actorList') %}
+     * act as:
+     * echo U('Actor/actorList');
+     *
+     * @return boolean
+     */
+    public function addTplFunction($function)
+    {
+        return App::addTemplateFunction($function);
     }
 
 
@@ -168,8 +188,8 @@ class Controller
      */
     public function error404($string = '')
     {
-        send_http_status(404);
-        if (!C('VIEW_ENGINE_ON')) {
+        sendHttpStatus(404);
+        if (!C('TPL_ENGINE_ON')) {
             trigger_error($string);
         }
         $this->set('errorInfo', $string);
@@ -186,28 +206,10 @@ class Controller
     public function __get($proName)
     {
         switch ($proName) {
-            case 'db':
-            case 'database':
-                break;
-
             default:
                 # code...
                 break;
         }
-    }
-
-    /**
-     * 获取数据库链接对象
-     *
-     * @return
-     */
-    private function _getDb()
-    {
-        if (!isset(self::$db)) {
-
-        }
-
-        return self::$db;
     }
 
     /**

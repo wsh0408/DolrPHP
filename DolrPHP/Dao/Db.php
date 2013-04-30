@@ -255,6 +255,10 @@ class Db
     private static function getMysqli($host, $user, $pass, $dbName, $charset)
     {
         try {
+            if (!extension_loaded('mysqlnd')) {
+                throw new Exception("使用Mysqli连接方式需要启用'mysqlnd'拓展");
+                return false;
+            }
             $mysqli = new Mysqli($host, $user, $pass, $dbName);
             $mysqli->set_charset($charset);
             return $mysqli;

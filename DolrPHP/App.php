@@ -26,12 +26,6 @@ include DOLR_PATH . 'Dispatcher.php';
  **/
 class App
 {
-    /**
-     * 应用名称
-     *
-     * @var string
-     */
-    public static $name;
 
     /**
      * 应用的url
@@ -73,6 +67,13 @@ class App
     public static $tplEngine = null;
 
     /**
+     * 模板变量
+     *
+     * @var array
+     */
+    public static $template_var = array();
+
+    /**
      * App 运行结果
      * @var string
      */
@@ -94,15 +95,8 @@ class App
             throw new DolrException('应用目录"' . APP_PATH . '"不存在,尝试创建失败！');
         }
 
-        //加载应用配置文件
-        $appConfig = APP_PATH . 'config.php';
-        if (!file_exists($appConfig)) {
-            $tmp = file_get_contents(INC_PATH . 'ConfigSample.php');
-            W($appConfig, $tmp, false);
-        }
-
         //初始化配置
-        self::_initAppConfig(include $appConfig);
+        self::_initAppConfig();
 
         //目录检测
         self::_initAppDir();
@@ -116,8 +110,7 @@ class App
         Dispatcher::initialize(C('ROUTING_TABLE'));
 
         //获取应用当前的URL并定义为常量
-        $appUrlInfo = current_urli(true);
-        self::$url = $appUrlInfo['base_dir_url'];
+        self::$url = Dispatcher::generateUrl(Dispatcher::$module, Dispatcher::$action);
 
         //将框架拓展目录加载到包含目录
         set_include_path(INC_PATH . PATH_SEPARATOR . get_include_path());
@@ -126,10 +119,12 @@ class App
         self::_includeAppPublicFile();
 
         //如果使用模板引擎则实例化模板引擎
-        if (C('VIEW_ENGINE_ON')) {
+        if (C('TPL_ENGINE_ON')) {
             self::_initViewEngine();
+            self::_setTemplateCommonVar();
+            self::_setTemplateCommonFunction();
         }
-
+        $controllerName = Dispatcher::$module;
         $controller = ucfirst(Dispatcher::$module . C('CONTROLLER_IDENTITY'));
         if (!class_exists($controller)) {
             self::$controller = new Controller();
@@ -137,7 +132,7 @@ class App
         }
 
         self::$controller = new $controller();
-        self::$controllerName = $controller;
+        self::$controllerName = $controllerName;
         self::$actionName = Dispatcher::$action;
     }
 
@@ -188,23 +183,105 @@ class App
      */
     private static function _initViewEngine()
     {
-        $options = array(
-                    'template_dir'    => C('VIEW_PATH'), //模板目录
-                    'compile_dir'     => C('RUNTIME_PATH') . 'compile/', //编译目录
-                    'cache_dir'       => C('RUNTIME_PATH') . 'cache/', //缓存目录
-                    'caching'         => (bool)C('VIEW_CACHE'), //是否缓存
-                    'cache_lifetime'  => C('VIEW_CACHE_LIFETIME'), //缓存有效期
-                    'tpl_suffix'      => C('VIEW_SUFFIX'), //模板后缀
-                    'left_delimiter'  => C('VIEW_LDELIM'), //模板左定界符
-                    'right_delimiter' => C('VIEW_RDELIM'), //模板右定界符
-                   );
+        $config = array('debug' => C('DEBUG'));
+        if ((bool)C('TPL_CACHE')) {
+            $config = array_merge($config, array('cache' => C('RUNTIME_PATH') . 'cache/'));
+        }
         try {
-            $tplEngine = DolrView::getInstance($options);
-            $tplEngine->replace = C('VIEW_REPLACEMENT'); //注册替换变量数据
+            require_once DOLR_PATH . '/Twig/Autoloader.php';
+            Twig_Autoloader::register();
+            $loader = new Twig_Loader_Filesystem(array(TPL_PATH, C('TPL_PATH')));
+            $twig   = new Twig_Environment($loader, $config);
+            self::$tplEngine = $twig;
         } catch (DolrException $e) {
             throw $e;
         }
-        self::$tplEngine = $tplEngine;
+    }
+
+    /**
+     * 设置模板全局公用变量
+     *
+     * @example
+     * <pre>
+     * array(
+     *    'IMG_PATH' => '/assets/images/',
+     *    'CSS_PATH' => '/assets/css/',
+     *    'JS_PATH'  => '/assets/js/',
+     * );
+     * </pre>
+     *
+     * @return void
+     */
+    private static function _setTemplateCommonVar()
+    {
+        self::$template_var = array_merge(self::$template_var, C('TPL_COMMON_VAR'));
+    }
+
+    /**
+     * 设置模板通用函数
+     *
+     * @return void
+     */
+    private static function _setTemplateCommonFunction()
+    {
+        $functionArray = array(
+                          'url'         => 'U',
+                          'cookie'      => 'cookie',
+                          'session'     => 'session',
+                          'byte_format' => 'byteFormat',
+                          'msubstr'     => 'msubstr',
+                         );
+        self::addTemplateFunction($functionArray);
+    }
+
+    /**
+     * 添加模板函数
+     *
+     * @param string|array $function 要添加的函数，可是使用字符串或者数组
+     *
+     * @example
+     * <pre>
+     *
+     * App::addTemplateFunction(
+     *                      array('url' => 'U'),
+     *                      array('xxx' => 'xxxx'),
+     *                       ...
+     *                     );
+     * in template:
+     * {% url('Actor/actorList') %}
+     * act as:
+     * echo U('Actor/actorList');
+     * ---------------- or --------------------------
+     * App::addTemplateFunction('url');
+     * in template:
+     * {% url('Actor/actorList') %}
+     * act as:
+     * echo url('Actor/actorList');
+     * </pre>
+     *
+     * @return boolean
+     */
+    public static function addTemplateFunction($function)
+    {
+        if (is_array($function)) {
+            foreach ($function as $alias => $functionName) {
+                    self::$tplEngine->addFunction(
+                        new Twig_SimpleFunction($alias, function() use ($functionName){
+                            echo call_user_func_array($functionName, func_get_args());
+                        }));
+            }
+
+            return true;
+        } elseif (is_string($function)) {
+            self::$tplEngine->addFunction(
+                        new Twig_SimpleFunction($function, function() use ($functionName){
+                            echo call_user_func_array($function, func_get_args());
+                        }));
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -219,8 +296,8 @@ class App
             $appDirs = array(
                         C('CONTROLLER_PATH'),
                         C('MODEL_PATH'),
-                        C('VIEW_PATH'),
-                        C('PUBLIC_PATH'),
+                        C('TPL_PATH'),
+                        C('ASSETS_PATH'),
                         C('RUNTIME_PATH'),
                         C('EXTENSION_PATH'),
                        );
@@ -255,14 +332,25 @@ class App
     /**
      * 初始化配置
      *
-     * @param  array  $appConfig 应用配置
-     *
      * @return array
      */
-    private static function _initAppConfig(array $appConfig)
+    private static function _initAppConfig()
     {
-        $defaultConfig = include INC_PATH . 'ConfigBase.php';
-        self::$config = array_merge($defaultConfig, $appConfig);
+        try {
+            //加载应用配置文件
+            $appConfigPath = APP_PATH . 'config.php';
+            if (!file_exists($appConfigPath)) {
+                $tmp = file_get_contents(INC_PATH . 'ConfigSample.php');
+                W($appConfigPath, $tmp, false);
+            }
+            $defaultConfig = include INC_PATH . 'ConfigBase.php';
+            $appConfig = include $appConfigPath;
+            self::$config = array_merge($defaultConfig, $appConfig);
+        } catch (Exception $e) {
+            throw new Exception("配置文件有语法错误");
+
+        }
+
     }
 
     /**
