@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架
  *
- * @package     DolrPHPs
+ * @package     DolrPHP
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
@@ -44,9 +44,9 @@ class Request
     public static function filterData($val)
     {
         if (is_array($val)) {
-            $val = array_map('self::removeXSS',$val); //Inc/functions.php
+            $val = array_map('self::removeXSS',$val);
         } elseif (is_string($val)) {
-            $val = self::filterData($value); //Inc/functions.php
+            $val = self::filterData($value);
         }
 
         return $val;

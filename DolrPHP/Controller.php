@@ -166,9 +166,9 @@ class Controller
      *                      array('xxx' => 'xxxx'),
      *                       ...
      *                     );
-     * in template:
+     * 模板中的用法:
      * {% url('Actor/actorList') %}
-     * act as:
+     * 编译后:
      * echo U('Actor/actorList');
      *
      * @return boolean
