@@ -10,26 +10,19 @@
  * @link        http://www.dolrphp.com
  * @version     $Id: Joychao $
  **/
-
 version_compare(PHP_VERSION, '5.3.0', '>') or die ('require PHP > 5.3.0 !');
-$dirOfScriptName = dirname($_SERVER['SCRIPT_FILENAME']);
+defined('APP_PATH') || exit("<pre>请先定义应用目录常量'APP_PATH'(绝对路径),eg:define('APP_PATH', __DIR__ . '/Home/')</pre>");
 $dirOfLocal = str_replace('\\', '/', dirname(__FILE__));
-
-if (strlen($_SERVER['DOCUMENT_ROOT']) > strlen($dirOfScriptName) + 1) {
-    $dirOfScriptName = trim($_SERVER['DOCUMENT_ROOT'],'/');
-}
-
+$dirOfFile  = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
 //base
-defined('APP_NAME')  || define('APP_NAME', basename($dirOfScriptName));
-defined('APP_PATH')  || define('APP_PATH', realpath($dirOfScriptName . '/'));
+defined('APP_ROOT') || define('APP_ROOT', $dirOfFile . basename(trim(APP_PATH, '/')) . '/');
 defined('DOLR_PATH') || define('DOLR_PATH', $dirOfLocal . '/');
-defined('APP_ROOT')  || define('APP_ROOT', str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']) . APP_NAME . '/'));
-defined('APP_ABS_PATH')  || define('APP_ABS_PATH', realpath(APP_PATH) . '/');
+defined('APP_ABS_PATH') || define('APP_ABS_PATH', realpath(APP_PATH) . '/');
 //dirs
-define('DB_PATH', DOLR_PATH . 'Dao/');       //DolrPHP 数据库驱动目录
-define('EXT_PATH', DOLR_PATH . 'Extension/');     //DolrPHP 框架拓展目录
-define('INC_PATH', DOLR_PATH . 'Include/');     //DolrPHP 基础文件目录
-define('TPL_PATH', DOLR_PATH . 'Template/');     //DolrPHP 基础文件目录
+define('DB_PATH', DOLR_PATH . 'Dao/');              //DolrPHP 数据库驱动目录
+define('EXT_PATH', DOLR_PATH . 'Extension/');       //DolrPHP 框架拓展目录
+define('INC_PATH', DOLR_PATH . 'Include/');         //DolrPHP 基础文件目录
+define('TPL_PATH', DOLR_PATH . 'Template/');        //DolrPHP 基础文件目录
 define('IS_CGI', substr(PHP_SAPI, 0, 3) == 'cgi' ? 1 : 0);
 define('IS_WIN', strstr(PHP_OS, 'WIN') ? 1 : 0);
 define('IS_CLI', PHP_SAPI == 'cli' ? 1 : 0);
@@ -53,6 +46,7 @@ define('MAGIC_QUOTES_GPC',get_magic_quotes_gpc());
 ini_set('magic_quotes_runtime', 0);
 
 //run & trace
+Trace::initialize();
 Trace::start();
 
 //init

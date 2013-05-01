@@ -89,10 +89,17 @@ class Trace
      */
     public static $tplName = '';
 
+    /**
+     * 日志文件
+     *
+     * @var string
+     */
+    public static $errorLogFile = '';
+
 
     public static function initialize()
     {
-        # code...
+        self::$errorLogFile = C('RUNTIME_PATH') . 'error.log';
     }
 
     /**
@@ -140,8 +147,8 @@ class Trace
             E_RECOVERABLE_ERROR => '致命错误'
         );
         $errorType = array_key_exists($errorType, $errTypes) ? $errTypes[$errorType] : '未知错误';
-        $msg       = vsprintf("%s: '%s'. 位置:%s:%s", func_get_args());
-        error_log($msg);
+        $msg       = vsprintf("%s: '%s'. 位置:%s:%s\n", func_get_args());
+        error_log($msg, 3, self::$errorLogFile);
         array_push(self::$errorInfo, $msg);
     }
 
@@ -277,7 +284,7 @@ class Trace
                  '[FILENAME]' => $exception->getFile(),
                  '[LINE]'     => $exception->getLine(),
                 );
-        error_log($msg);
+        error_log($msg, 3, self::$errorLogFile);
         $html = G(TPL_PATH . 'Exception.php', false);
         $html = str_replace(array_keys($args), $args, $html);
 

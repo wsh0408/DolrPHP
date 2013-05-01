@@ -1,4 +1,3 @@
 <?php
-define('APP_NAME','Admin');
-define('APP_PATH','./Admin/');
+define('APP_PATH', __DIR__ . '/Admin/');
 include './DolrPHP/DolrPHP.php';

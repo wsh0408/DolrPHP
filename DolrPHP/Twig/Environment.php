@@ -1200,7 +1200,7 @@ class Twig_Environment
     {
         $dir = dirname($file);
         if (!is_dir($dir)) {
-            if (false === mkdir($dir, 0755, true) && !is_dir($dir)) {
+            if (false === @mkdir($dir, 0755, true) && !is_dir($dir)) {
                 throw new RuntimeException(sprintf("Unable to create the cache directory (%s).", $dir));
             }
         } elseif (!is_writable($dir)) {

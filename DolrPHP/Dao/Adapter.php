@@ -118,7 +118,6 @@ abstract class DB_Adapter
     public function dispenseTable($tableName)
     {
         $tableMeta = $this->_getTableMetaInfo($tableName);
-        var_dump($tableMeta);
         if (!$tableMeta || empty($tableMeta)) {
             throw new Exception("数据表 '{$tableName}' 读取失败", 1);
         }
@@ -137,7 +136,6 @@ abstract class DB_Adapter
     protected function _getTableMetaInfo($tableName)
     {
         $tableInfo = $this->query("SHOW COLUMNS FROM `$tableName`");
-        var_dump($tableInfo);
         $data = array();
         $data['_name']   = $tableName;
         $data['_fields'] = array();

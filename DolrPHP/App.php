@@ -98,6 +98,11 @@ class App
         //初始化配置
         self::_initAppConfig();
 
+         //初始化路由
+        Dispatcher::initialize(C('ROUTING_TABLE'));
+        $controllerName       = Dispatcher::$module;
+        $action               = Dispatcher::$action;
+
         //目录检测
         self::_initAppDir();
 
@@ -106,11 +111,8 @@ class App
             session_start();
         }
 
-        //初始化路由
-        Dispatcher::initialize(C('ROUTING_TABLE'));
-
         //获取应用当前的URL并定义为常量
-        self::$url = Dispatcher::generateUrl(Dispatcher::$module, Dispatcher::$action);
+        self::$url = Dispatcher::generateUrl($controllerName, $action);
 
         //将框架拓展目录加载到包含目录
         set_include_path(INC_PATH . PATH_SEPARATOR . get_include_path());
@@ -118,22 +120,22 @@ class App
         //包含应用全局调用文件public.php
         self::_includeAppPublicFile();
 
+        //初始化控制器
+        $controller = ucfirst($controllerName . C('CONTROLLER_IDENTITY'));
+        if (!class_exists($controller)) {
+            self::$controller = new Controller();
+            throw new DolrException("控制器 '{$controller}' 文件不存在！");
+        }
+        self::$controller = new $controller();
+        self::$controllerName = $controllerName;
+        self::$actionName     = $action;
+
         //如果使用模板引擎则实例化模板引擎
         if (C('TPL_ENGINE_ON')) {
             self::_initViewEngine();
             self::_setTemplateCommonVar();
             self::_setTemplateCommonFunction();
         }
-        $controllerName = Dispatcher::$module;
-        $controller = ucfirst(Dispatcher::$module . C('CONTROLLER_IDENTITY'));
-        if (!class_exists($controller)) {
-            self::$controller = new Controller();
-            throw new DolrException("控制器 '{$controller}' 文件不存在！");
-        }
-
-        self::$controller = new $controller();
-        self::$controllerName = $controllerName;
-        self::$actionName = Dispatcher::$action;
     }
 
     /**
@@ -214,7 +216,12 @@ class App
      */
     private static function _setTemplateCommonVar()
     {
-        self::$template_var = array_merge(self::$template_var, C('TPL_COMMON_VAR'));
+        $baseVar = array(
+                    'CONTROLLER_NAME' => self::$controllerName,
+                    'ACTION_NAME'     => self::$actionName,
+                    //TODO: other var
+                   );
+        self::$template_var = array_merge(self::$template_var, C('TPL_COMMON_VAR'), $baseVar);
     }
 
     /**
