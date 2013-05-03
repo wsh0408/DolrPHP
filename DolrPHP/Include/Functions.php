@@ -217,7 +217,7 @@ function session($name = null, $value = null)
 }
 
 /**
- * ================= 以下为其它辅助函数 ===================
+ * ================= 以下为辅助函数 ===================
  */
 /**
  * makedir
@@ -229,6 +229,10 @@ function session($name = null, $value = null)
  */
 function makeDir($path, $mode = 0755)
 {
+    if (empty($path)) {
+        return false;
+    }
+
     return mkdir($path, $mode, true);
 }
 

@@ -4,6 +4,7 @@ return array(
             'SHOW_TRACE'          => true,
             'DIR_CHECK'           => true,     //目录自动检测
             'ROUTING_TABLE'       => array(),   //路由表
+            'DB_ENGINE'           => '',
             'DB_SET'              => array(
                                       'default' => array(
                                                     'host'    => 'localhost', //数据库主机,
