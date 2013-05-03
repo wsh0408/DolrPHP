@@ -35,7 +35,6 @@ class Db_Adapter_Pdo extends Db_Adapter
             } else {
                 $stmt->execute(array_values($params));
             }
-            var_export($stmt->fetch(PDO::FETCH_BOTH));
             return $this->stmt = $stmt;
         } catch (PDOException $e) {
             throw $e;
