@@ -45,6 +45,8 @@ header('Content-Type: text/html; charset=utf-8');
 define('MAGIC_QUOTES_GPC',get_magic_quotes_gpc());
 //关闭自动转义
 ini_set('magic_quotes_runtime', 0);
+//时区
+date_default_timezone_set('PRC');
 
 //run & trace
 Trace::initialize();

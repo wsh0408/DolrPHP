@@ -23,8 +23,11 @@ function dolrAutoLoader($className)
         include DOLR_PATH . $className . '.php';
     } elseif ($className == 'Db') { //DB
         include DB_PATH . 'Db.php';
-    } elseif (false !== stripos($className, 'Db_')) { //DB
-        include DB_PATH . str_replace('_', '/', substr($className, 3)) . '.php';
+    } elseif (false !== stripos($className, 'Db_Adapter_')) { //DB
+        $file = DB_PATH . str_replace('_', '/', substr($className, 3)) . '.php';
+        if (file_exists($file)) {
+            include $file;
+        }
     }
     Trace::L($className, Trace::LOG_TYPE_CLASS);
 }
@@ -57,10 +60,10 @@ function M($model)
 {
     $model         = ucfirst($model);
     $modelFileName = $model . C('MODEL_IDENTITY');
-    if (file_exists(C('MODEL_PATH') . $model . '.php'))
-        return new $modelFileName($model);
+    if (class_exists(C('MODEL_PATH') . $model))
+        return new $modelFileName();
     else
-        return new Model($model);
+        return new Model();
 }
 
 /**

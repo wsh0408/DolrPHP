@@ -119,7 +119,7 @@ abstract class DB_Adapter
     {
         $tableMeta = $this->_getTableMetaInfo($tableName);
         if (!$tableMeta || empty($tableMeta)) {
-            throw new Exception("数据表 '{$tableName}' 读取失败", 1);
+            throw new Exception("数据表 '{$tableName}' 不存在或读取失败", 1);
         }
         $this->_tableMeta = $tableMeta;
 
@@ -163,14 +163,13 @@ abstract class DB_Adapter
      * 过滤输入数据
      *
      * @param array  $data   input data
-     * @param string $action insert|update
      *
      * @return array
      */
-    protected function _filterFields($data, $action = 'insert')
+    protected function _filterFields($data)
     {
         if (empty($this->_tableMeta)) {
-            throw new Exception("未选择目标数据表[{$action}]", 1);
+            throw new Exception("未初始化目标数据表");
         }
         //清空values
         $output = array();
@@ -212,7 +211,7 @@ abstract class DB_Adapter
             default:
                 $this->_connector = &$this->_reader;
                 $res = $this->exec($sql, $params);
-                $ret = $this->fetch($res, $fetchType);
+                $ret = $this->_fetch($res, $fetchType);
                 break;
         }
         $this->_setLastSql($sql, $params);
@@ -251,7 +250,7 @@ abstract class DB_Adapter
      *
      * @return array or boolean
      */
-    public function fetch($resource, $fetchType)
+    protected function _fetch($resource, $fetchType)
     {
         if (!is_resource($resource) && !is_object($resource)) {
             return $resource;
@@ -309,6 +308,9 @@ abstract class DB_Adapter
      */
     public function add(array $data)
     {
+        if (empty($data)) {
+            return false;
+        }
         $sql = $this->_createSql(self::SQL_TYPE_INSERT, '', $data);
         $res = $this->query($sql,$data);
         if (!$res) {
@@ -337,13 +339,14 @@ abstract class DB_Adapter
      * @param string $sql    SQL
      * @param array  $values values to bind
      * @param array  $fetchType fetch type (assoc|num|array|object)
+     *
      * @return array
      */
     public function find($sql = '', array $values = array(), $fetchStyle = self::FETCH_TYPE_ASSOC)
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql);
         $sql .= " LIMIT 1";
-        return $this->fetchOne($this->query($sql, $values, $fetchStyle));
+        return $this->_fetchOne($this->query($sql, $values, $fetchStyle));
     }
 
     /**
@@ -364,14 +367,17 @@ abstract class DB_Adapter
     /**
      * 更新记录
      *
-     * @param array  $data
-     * @param string $sql
-     * @param array  $values
+     * @param array  $data   data to insert
+     * @param string $sql    where condition
+     * @param array  $values values to bind
      *
      * @return bool|mixed
      */
     public function save(array $data, $sql = '')
     {
+        if (empty($data)) {
+            return false;
+        }
         $data = $this->_filterFields($data);
         $sql = $this->_createSql(self::SQL_TYPE_UPDATE, $sql, $data);
         $res = $this->query($sql,$data);
@@ -380,6 +386,38 @@ abstract class DB_Adapter
         }
 
         return $res;
+    }
+
+    /**
+     * 设置一条记录
+     * 如果不存在则add($data),存在则save($data)
+     *
+     * @param array $data 数据
+     * @param string $checkFields 需要检测的字段，判断存在与否的字段
+     */
+    public function set(array $data, $checkFields)
+    {
+        if (empty($data)) {
+            return false;
+        }
+        $data = $this->_filterFields($data);
+        if (empty($checkFields)) {
+            $checkFields = array_keys($data);
+        } elseif (is_string($checkFields)) {
+            $checkFields = stripos($checkFields, ',') ?
+                            explode(',', $checkFields) : array(trim($checkFields));
+        }
+        $condition = array();
+        foreach ($checkFields as $key) {
+            if (!isset($data[$key])) {
+                continue;
+            }
+            $condition = "`{$key}` = ?";
+        }
+        $sql = "WHERE ".join(' AND ', $condition);
+        if ($this->find($sql, $data)) {
+            $this->save($data);
+        }
     }
 
     /**
@@ -394,7 +432,7 @@ abstract class DB_Adapter
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
         $sql .= " LIMIT 1";
-        return $this->fetchOne($this->query($sql, $values));
+        return $this->_fetchOne($this->query($sql, $values));
     }
 
     /**
@@ -436,6 +474,9 @@ abstract class DB_Adapter
      */
     public function getCol($colName, $convertTo2D = false, $sql = '', array $values = array())
     {
+        if (empty($this->_tableMeta)) {
+            throw new Exception("未初始化目标数据表");
+        }
         if (!in_array($colName, $this->_tableMeta['_fields'])) {
             $this->_log("表'{$this->_tableMeta['_name']}'不存在字段'{$colName}'");
             return false;
@@ -467,9 +508,13 @@ abstract class DB_Adapter
      */
     public function getCell($cellName, $sql = '', array $values = array())
     {
+        if (!in_array($colName, $this->_tableMeta['_fields'])) {
+            $this->_log("表'{$this->_tableMeta['_name']}'不存在字段'{$cellName}'");
+            return false;
+        }
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values, "`$cellName`");
         $sql .= "LIMIT 1";
-        $res = $this->fetchOne($this->query($sql, $values));
+        $res = $this->_fetchOne($this->query($sql, $values));
         if ($res && isset($res[$cellName])) {
             return $res[$cellName];
         }
@@ -490,7 +535,7 @@ abstract class DB_Adapter
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
         $sql .= "LIMIT 1";
-        return $this->fetchOne($this->query($sql, $values, self::FETCH_TYPE_ASSOC));
+        return $this->_fetchOne($this->query($sql, $values, self::FETCH_TYPE_ASSOC));
     }
 
     /**
@@ -506,7 +551,7 @@ abstract class DB_Adapter
     {
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
         $sql .= "LIMIT 1";
-        return $this->fetchOne($this->query($sql, $values, self::FETCH_TYPE_OBJECT));
+        return $this->_fetchOne($this->query($sql, $values, self::FETCH_TYPE_OBJECT));
     }
 
     /**
@@ -535,12 +580,15 @@ abstract class DB_Adapter
      */
     public function getCount($field = '', $sql = '', array $values = array())
     {
+        if (empty($this->_tableMeta)) {
+            throw new Exception("未初始化目标数据表");
+        }
         if (empty($field) || !is_array($field, $this->_tableMeta['_fields'])) {
             $field = $this->_tableMeta['_pk'];
         }
         $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values, "COUNT(`{$field}`) AS `count`");
         $sql .= "LIMIT 1";
-        $res = $this->fetchOne($this->query($sql, $values));
+        $res = $this->_fetchOne($this->query($sql, $values));
         if ($res) {
             return $res['count'];
         }
@@ -557,9 +605,14 @@ abstract class DB_Adapter
      */
     protected function _createSql($sqlType, $sql, $data = array(), $fieldArea = '*')
     {
+        if (empty($this->_tableMeta)) {
+            throw new Exception("未初始化目标数据表");
+        }
         if (!empty($data)) {
             $data = $this->_filterFields($data);
             $fields = array_keys($data);
+        } else {
+            $fields = $this->tableMeta['fields'];
         }
         switch ($sqlType) {
             case self::SQL_TYPE_SELECT:
@@ -569,6 +622,9 @@ abstract class DB_Adapter
                 $sql = "DELETE FROM `{$this->_tableMeta['_name']}` {$sql} ";
                 break;
             case self::SQL_TYPE_UPDATE:
+                if (empty($data)) {
+                    return false;
+                }
                 $arr = array();
                 foreach ($fields as $field) {
                     $arr[] = "`{$field}` = ? ";
@@ -577,6 +633,9 @@ abstract class DB_Adapter
                 $sql = "UPDATE `{$this->_tableMeta['_name']}` SET {$setString} {$sql} ";
                 break;
             case self::SQL_TYPE_INSERT:
+                if (empty($data)) {
+                    return false;
+                }
                 $keys = join(',', $fields);
                 $valuesFlag = join(',', array_fill(0, count($fields), '?'));
                 $sql = "INSERT INTO `{$this->_tableMeta['_name']}`({$keys}) VALUES({$valuesFlag}) ";
@@ -602,9 +661,6 @@ abstract class DB_Adapter
                 break;
             case 'insertid':
                 return $this->_lastInsertId;
-                break;
-            case 'tablemeta':
-                return $this->_tableMeta;
                 break;
             default:
                 # code...
