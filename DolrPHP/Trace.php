@@ -99,7 +99,7 @@ class Trace
 
     public static function initialize()
     {
-        self::$errorLogFile = C('RUNTIME_PATH') . 'error.log';
+
     }
 
     /**
@@ -148,7 +148,7 @@ class Trace
         );
         $errorType = array_key_exists($errorType, $errTypes) ? $errTypes[$errorType] : '未知错误';
         $msg       = vsprintf("%s: '%s'. 位置:%s:%s\n", func_get_args());
-        error_log($msg, 3, self::$errorLogFile);
+        error_log($msg);
         array_push(self::$errorInfo, $msg);
     }
 
@@ -284,7 +284,7 @@ class Trace
                  '[FILENAME]' => $exception->getFile(),
                  '[LINE]'     => $exception->getLine(),
                 );
-        error_log($msg, 3, self::$errorLogFile);
+        error_log($msg);
         $html = G(TPL_PATH . 'Exception.php', false);
         $html = str_replace(array_keys($args), $args, $html);
 

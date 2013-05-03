@@ -11,7 +11,8 @@
  * @version     $Id: Joychao $
  **/
 version_compare(PHP_VERSION, '5.3.0', '>') or die ('require PHP > 5.3.0 !');
-defined('APP_PATH') || exit("<pre>请先定义应用目录常量'APP_PATH'(绝对路径),eg:define('APP_PATH', __DIR__ . '/Home/')</pre>");
+defined('APP_PATH') || exit("<pre>请先定义应用目录常量'APP_PATH'(绝对路径),
+                            eg:define('APP_PATH', __DIR__ . '/Home/')</pre>");
 $dirOfLocal = str_replace('\\', '/', dirname(__FILE__));
 $dirOfFile  = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
 //base

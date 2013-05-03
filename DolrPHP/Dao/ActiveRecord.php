@@ -22,39 +22,37 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
      *
      * @var array
      */
-    protected $data = array();
+    protected $_data = array();
 
     /**
-     * 当前数据所属表信息
-     *
+     * 表结构
+     * 
      * @var array
-     **/
-    public $table = array();
+     */
+    protected $_tableMeta = array();
 
     /**
      * 数据库连接对象
      *
      * @var object
      */
-    protected static $adapter = null;
+    protected static $_adapter = null;
 
     /**
      * 实例化对象
      *
-     * @param array $tableName 当前数据所属表名
-     * @param array $data      数据
+     * @param object $adapter 适配器对象
+     * @param array  $data    数据
      *
      * @return void
      */
-    public function __construct($tableName, $data)
+    public function __construct($adapter, $data)
     {
-        $this->data = $data;
-        if (is_null(self::$adapter)) {
-            $engine        = Db::$adapterType;
-            $adapter       = 'Db_Adapter_' . ucfirst($engine);
-            self::$adapter = new $adapter($tableName);
+        $this->_data = $data;
+        if (is_null(self::$_adapter)) {
+            self::$_adapter =$adapter;
         }
-        $this->table = self::$adapter->getTableInfo($tableName);
+        $this->_tableMeta = $adapter->tableMeta;
     }
 
     /**
@@ -64,9 +62,8 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
      */
     public function save()
     {
-        $data = $this->data;
-
-        return self::$adapter->save($data, "`{$this->table['pk']}` = ?", array($data[$this->table['pk']]));
+        $pk = $this->_tableMeta['_pk'];
+        return self::$_adapter->save($data, "WHERE `{$pk}` = ?", array($this->_data[$pk]));
     }
 
     /**
@@ -76,7 +73,8 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
      */
     public function del()
     {
-        self::$adapter->del($this->table['pk'] . ' = ?', array($this->data[$this->table['pk']]));
+        $pk = $this->_tableMeta['_pk'];
+        return self::$_adapter->del("WHERE `{$pk}` = ?", array($this->_data[$pk]));
     }
 
     /**
@@ -86,7 +84,7 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
      */
     public function export()
     {
-        return $this->data;
+        return $this->_data;
     }
 
     /**
@@ -119,8 +117,8 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
      */
     public function __call($methodName, $args)
     {
-        if (!method_exists($this, $methodName) and method_exists(self::$adapter, $methodName)) {
-            call_user_func_array(array(self::$adapter, $methodName ), $args);
+        if (!method_exists($this, $methodName) and method_exists(self::$_adapter, $methodName)) {
+            call_user_func_array(array(self::$_adapter, $methodName ), $args);
         }
     }
 
@@ -133,8 +131,8 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
      */
     public function &__get($proName)
     {
-        if (isset($this->data[$proName])) {
-            return $this->data[$proName];
+        if (isset($this->_data[$proName])) {
+            return $this->_data[$proName];
         }
     }
 
@@ -148,21 +146,21 @@ class Db_ActiveRecord implements ArrayAccess, Iterator, Countable
      */
     public function __set($proName, $proValue)
     {
-        if (isset($this->data[$proName])) {
-            return $this->data[$proName] = $proValue;
+        if (isset($this->_data[$proName])) {
+            return $this->_data[$proName] = $proValue;
         }
     }
 
     //以下是实现数组访问对象方法
-    public function offsetSet($offset, $value) { $this->data[$offset] = $value; }
-    public function offsetExists($offset) { return isset($this->data[$offset]); }
-    public function offsetUnset($offset) { unset($this->data[$offset]); }
-    public function offsetGet($offset) { return isset($this->data[$offset]) ? $this->data[$offset] : NULL; }
-    public function current() { return current($this->data); }
-    public function key() { return key($this->data); }
-    public function next() { return next($this->data); }
+    public function offsetSet($offset, $value) { $this->_data[$offset] = $value; }
+    public function offsetExists($offset) { return isset($this->_data[$offset]); }
+    public function offsetUnset($offset) { unset($this->_data[$offset]); }
+    public function offsetGet($offset) { return isset($this->_data[$offset]) ? $this->_data[$offset] : NULL; }
+    public function current() { return current($this->_data); }
+    public function key() { return key($this->_data); }
+    public function next() { return next($this->_data); }
     public function valid() { return ($this->current() !== FALSE); }
-    public function rewind() { return reset($this->data); }
-    public function count() { return count($this->data); }
+    public function rewind() { return reset($this->_data); }
+    public function count() { return count($this->_data); }
 
 } // END class Db_ActiveRecord

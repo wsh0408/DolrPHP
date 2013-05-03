@@ -98,8 +98,11 @@ class App
         //初始化配置
         self::_initAppConfig();
 
+        //设置错误日志文件路径
+        self::_setErrorLogPath();
+
          //初始化路由
-        Dispatcher::initialize(C('ROUTING_TABLE'));
+        Dispatcher::initialize((array)C('ROUTING_TABLE'));
         $controllerName       = Dispatcher::$module;
         $action               = Dispatcher::$action;
 
@@ -217,11 +220,12 @@ class App
     private static function _setTemplateCommonVar()
     {
         $baseVar = array(
-                    'CONTROLLER_NAME' => self::$controllerName,
+                    'APP_ROOT'        => APP_ROOT,
                     'ACTION_NAME'     => self::$actionName,
+                    'CONTROLLER_NAME' => self::$controllerName,
                     //TODO: other var
                    );
-        self::$template_var = array_merge(self::$template_var, C('TPL_COMMON_VAR'), $baseVar);
+        self::$template_var = array_merge(self::$template_var, $baseVar, C('TPL_COMMON_VAR'));
     }
 
     /**
@@ -386,6 +390,17 @@ class App
     private static function _log($string, $type = Trace::LOG_TYPE_ERROR)
     {
         Trace::L($string, $type);
+    }
+
+    /**
+     * 设置日志位置
+     *
+     * @return void
+     */
+    private static function _setErrorLogPath()
+    {
+        ini_set('log_errors', true);
+        ini_set('error_log', C('RUNTIME_PATH') . 'error.log');
     }
 
 } // END class Dolr

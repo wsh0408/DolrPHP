@@ -603,6 +603,9 @@ abstract class DB_Adapter
             case 'insertid':
                 return $this->_lastInsertId;
                 break;
+            case 'tablemeta':
+                return $this->_tableMeta;
+                break;
             default:
                 # code...
                 break;
