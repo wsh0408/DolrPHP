@@ -326,22 +326,5 @@ class Db
             throw new Exception('没有可用的数据库连接工具');
         }
     }
-
-    /**
-     * 将数组转换成 ActiveRecord
-     *
-     * @return array | object
-     */
-    public static function toAR($tableName, $data)
-    {
-        reset($data);
-        if (is_array($data)) { //如果第一个元素是数组则为二维
-            foreach ($data as &$val) {
-                $val = new Db_ActiveRecord($tableName, $val);
-            }
-        }
-
-        return $data;
-    }
-
+    
 }

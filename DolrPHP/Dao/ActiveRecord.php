@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架
  *
- * @package     Db
+ * @package     Dao
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
