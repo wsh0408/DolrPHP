@@ -177,7 +177,12 @@ class App
         if (self::$_appRunContent)
             echo self::$_appRunContent;
     }
-
+    
+    /**
+     * 检测应用目录并尝试创建 
+     * 
+     * @return void
+     */
     private static function _checkAppPath()
     {
         if (!file_exists(APP_PATH)
