@@ -90,10 +90,7 @@ class App
         spl_autoload_register('dolrAutoLoader');
 
         //应用目录
-        if (!file_exists(APP_PATH)
-            && false === makeDir(APP_PATH, 0777)) {
-            throw new DolrException('应用目录"' . APP_PATH . '"不存在,尝试创建失败！');
-        }
+        self::_checkAppPath();
 
         //初始化配置
         self::_initAppConfig();
@@ -179,6 +176,15 @@ class App
     {
         if (self::$_appRunContent)
             echo self::$_appRunContent;
+    }
+
+    private static function _checkAppPath()
+    {
+        if (!file_exists(APP_PATH)
+            && false === makeDir(APP_PATH, 0777)) {
+            throw new DolrException('应用目录"' . APP_PATH . '"不存在,尝试创建失败！');
+        }
+        defined('APP_ABS_PATH') || define('APP_ABS_PATH', str_replace('\\', '/', realpath(APP_PATH) . '/'));
     }
 
     /**

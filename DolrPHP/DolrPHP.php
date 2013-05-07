@@ -11,14 +11,16 @@
  * @version     $Id: Joychao $
  **/
 version_compare(PHP_VERSION, '5.3.0', '>') or die ('require PHP > 5.3.0 !');
-defined('APP_PATH') || exit("<pre>请先定义应用目录常量'APP_PATH'(绝对路径),
-                            eg:define('APP_PATH', __DIR__ . '/Home/')</pre>");
+defined('APP_PATH') || exit("请先定义应用目录常量'APP_PATH'(绝对路径),且目录存在,
+                            eg:define('APP_PATH', __DIR__ . '/Home/')");
+
 $dirOfLocal = str_replace('\\', '/', dirname(__FILE__));
 $dirOfFile  = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+
 //base
 defined('APP_ROOT') || define('APP_ROOT', $dirOfFile . basename(trim(APP_PATH, '/')) . '/');
 defined('DOLR_PATH') || define('DOLR_PATH', $dirOfLocal . '/');
-defined('APP_ABS_PATH') || define('APP_ABS_PATH', realpath(APP_PATH) . '/');
+
 //dirs
 define('DB_PATH', DOLR_PATH . 'Dao/');              //DolrPHP 数据库驱动目录
 define('EXT_PATH', DOLR_PATH . 'Extension/');       //DolrPHP 框架拓展目录
