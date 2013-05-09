@@ -8,7 +8,7 @@ return array(
             'DB_SET'              => array(
                                       'default' => array(
                                                     'host'    => 'localhost', //数据库主机,
-                                                    'name'    => 'dolrphp', //数据库名称,
+                                                    'dbname'    => 'dolrphp', //数据库名称,
                                                     'user'    => 'root',    //用户名
                                                     'pass'    => '',    //密码
                                                     'prefix'  => '',    //数据表前缀
