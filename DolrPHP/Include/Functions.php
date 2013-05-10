@@ -49,22 +49,6 @@ function C($key, $value = null)
     return App::$config[$key];
 }
 
-/**
- * 实例化模型类
- *
- * @param string $model 模型名
- *
- * @return object
- */
-function M($model)
-{
-    $model         = ucfirst($model);
-    $modelFileName = $model . C('MODEL_IDENTITY');
-    if (class_exists(C('MODEL_PATH') . $model))
-        return new $modelFileName();
-    else
-        return new Model();
-}
 
 /**
  * 写文件
@@ -75,7 +59,7 @@ function M($model)
  *
  * @return  void
  */
-function W($path, $content, $serialized = true)
+function write($path, $content, $serialized = true)
 {
     if ($serialized)
         $content = data2json($content);
@@ -94,7 +78,7 @@ function W($path, $content, $serialized = true)
  *
  * @return string|array
  */
-function G($path, $serialized = true)
+function read($path, $serialized = true)
 {
     if (!file_exists($path) or !is_readable($path)) {
         trigger_error('文件读取失败：[路径"' . $path . '"不存在或不可读]');
@@ -105,29 +89,6 @@ function G($path, $serialized = true)
 
     return file_get_contents($path);
 }
-
-/**
- * 生成带前缀的表名
- *
- * @param string $tableName 不带前缀的表名
- *
- * @return string
- */
-function T($tableName)
-{
-    return strtolower(C('DB_PRE') . $tableName);
-}
-
-/**
- * 不使用模板引擎（display的别名）
- *
- * @see display();{line:53}
- */
-function V()
-{
-    call_user_func_array('display', func_get_args());
-}
-
 
 /**
  * 生成URL
@@ -339,46 +300,6 @@ function sendHttpStatus($code)
         // 确保FastCGI模式下正常
         header('Status:' . $code . ' ' . $status[$code]);
     }
-}
-
-/**
- * 获取当前URL
- *
- * @param boolean $array 是否以数组形式返回
- *
- * @return string
- */
-function current_urli($array = false)
-{
-    $sys_protocal = isset($_SERVER['SERVER_PORT'])
-                    && $_SERVER['SERVER_PORT'] == '443' ? 'https://'
-                    : 'http://';
-    $sys_port     = (($_SERVER['SERVER_PORT'] == 80)
-                    or ($_SERVER['SERVER_PORT'] == 443)) ? ''
-                        : ':' . $_SERVER['SERVER_PORT'];
-    $php_self     = $_SERVER['PHP_SELF'] ?
-                    $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_NAME'];
-    $path_info    = isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : '';
-    $relate_url   = isset($_SERVER['REQUEST_URI']) ?
-                     $_SERVER['REQUEST_URI']
-                     : $php_self . (isset($_SERVER['QUERY_STRING'])
-                        ? '?' . $_SERVER['QUERY_STRING']
-                        : $path_info);
-    $base_url     = $sys_protocal . (isset($_SERVER['HTTP_HOST']) ?
-                     $_SERVER['HTTP_HOST'] : '') . $sys_port;
-    if ($array)
-        return array(
-            'protocal'     => $sys_protocal,
-            'sys_port'     => $sys_port,
-            'base_url'     => $base_url,
-            'base_dir_url' => trim($base_url . dirname(substr($php_self, 0,
-                                strpos($php_self, '.php'))), '\/') . '/',
-            'php_self'     => $php_self,
-            'path_info'    => $path_info,
-            'relate_url'   => $relate_url
-        );
-
-    return $base_url . $relate_url;
 }
 
 /**
