@@ -19,9 +19,9 @@
  **/
 class Model
 {
-    public $tablePrefix = '';
+    protected $tablePrefix = '';
 
-    public function __construct() {
+    protected function __construct() {
         $dbConfig = C('DB_SET');
         if (empty($dbConfig['default']['dbname'])) {
             throw new DolrException("无数据库配置");
@@ -41,7 +41,7 @@ class Model
      * @param string $tableName 表名（不用带前缀）
      * @return object
      */
-    public function dispense($tableName)
+    protected function dispense($tableName)
     {
         $tableName = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', trim($tableName)));
         if (!empty($this->tablePrefix) && strpos($tableName, $this->tablePrefix) !== 0 ) {
