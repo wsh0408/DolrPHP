@@ -22,7 +22,7 @@ class Model
     protected $tablePrefix = '';
 
     protected function __construct() {
-        $dbConfig = C('DB_SET');
+        $dbConfig = Config::get('DB_SET');
         if (empty($dbConfig['default']['dbname'])) {
             throw new DolrException("无数据库配置");
             return false;
@@ -31,7 +31,7 @@ class Model
         $reader = !empty($dbConfig['reader']) ? $dbConfig['reader'] : $dbConfig['default'];
         $this->tablePrefix = isset($dbConfig['writer']['prefix']) ? $dbConfig['writer']['prefix'] : '';
         // init DB
-        Db::initialize($writer, C('DB_ENGINE'), $reader);
+        Db::initialize($writer, Config::get('DB_ENGINE'), $reader);
         //Db::setLogger(new Trace);
     }
 

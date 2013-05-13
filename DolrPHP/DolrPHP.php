@@ -23,8 +23,6 @@ defined('DOLR_PATH') || define('DOLR_PATH', $dirOfLocal . '/');
 
 //dirs
 define('DB_PATH', DOLR_PATH . 'Dao/');              //DolrPHP 数据库驱动目录
-define('EXT_PATH', DOLR_PATH . 'Extension/');       //DolrPHP 框架拓展目录
-define('INC_PATH', DOLR_PATH . 'Include/');         //DolrPHP 基础文件目录
 define('TPL_PATH', DOLR_PATH . 'Template/');        //DolrPHP 基础文件目录
 define('IS_CGI', substr(PHP_SAPI, 0, 3) == 'cgi' ? 1 : 0);
 define('IS_WIN', strstr(PHP_OS, 'WIN') ? 1 : 0);
@@ -62,6 +60,6 @@ App::run();
 Trace::end();
 
 //Trace
-if (C('SHOW_TRACE') and !Request::isAjax()) {
+if (Config::get('SHOW_TRACE') and !Request::isAjax()) {
     echo Trace::traceInfo();
 }

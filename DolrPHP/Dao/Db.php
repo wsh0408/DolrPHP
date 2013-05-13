@@ -62,7 +62,7 @@ class Db
      *
      * @var object
      */
-    protected static $_logger = null;
+    protected static $_logs = '';
 
     protected static $_configSample = array(
                                         'host'    => 'localhost', //数据库主机,
@@ -240,7 +240,7 @@ class Db
      *
      * @return PDO
      */
-    private static function getPdo($host, $user, $pass, $dbName, $charset)
+    public static function getPdo($host, $user, $pass, $dbName, $charset)
     {
         try {
             $dsn = self::_createDSN($host, $dbName);
@@ -265,7 +265,7 @@ class Db
      *
      * @return Mysqli
      */
-    private static function getMysqli($host, $user, $pass, $dbName, $charset)
+    public static function getMysqli($host, $user, $pass, $dbName, $charset)
     {
         try {
             if (!extension_loaded('mysqlnd')) {
@@ -291,7 +291,7 @@ class Db
      *
      * @return Mysqli
      */
-    private static function getMysql($host, $user, $pass, $dbName, $charset)
+    public static function getMysql($host, $user, $pass, $dbName, $charset)
     {
         try {
             $mysql = mysql_connect($host, $user, $pass);

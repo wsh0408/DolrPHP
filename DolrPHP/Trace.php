@@ -192,9 +192,9 @@ class Trace
         //当前页面
         $currentFile = $_SERVER['SCRIPT_FILENAME'];
         //模块目录
-        $moduleDir = C('CONTROLLER_PATH') . ucfirst(App::$controllerName) . C('CONTROLLER_IDENTITY') . '.php';
+        $moduleDir = Config::get('CONTROLLER_PATH') . ucfirst(App::$controllerName) . Config::get('CONTROLLER_IDENTITY') . '.php';
         //模板目录
-        $tplDir = empty(self::$tplName) ? '未使用模板或页面出错！' : C('TPL_PATH') . self::$tplName;
+        $tplDir = empty(self::$tplName) ? '未使用模板或页面出错！' : Config::get('TPL_PATH') . self::$tplName;
 
         //加载的类
         $classes  = '<ol><li>' . join('</li><li>', self::$loadedClasses) . '</li></ol>';
@@ -209,7 +209,7 @@ class Trace
                      '[CLASSES]'      => $classes,
                      '[RUN_INFO]'     => $runInfo
                     );
-        $html = G(TPL_PATH . 'Trace.php', false);
+        $html = read(TPL_PATH . 'Trace.php', false);
         $html = str_replace(array_keys($args), $args, $html);
 
         return $html;
@@ -233,7 +233,7 @@ class Trace
                      '[FILENAME]' => $errorFile,
                      '[LINE]'     => $errorLine
                     );
-        $html = G(TPL_PATH . 'SysError.php', false);
+        $html = read(TPL_PATH . 'SysError.php', false);
         $html = str_replace(array_keys($args), $args, $html);
         $ajaxArray = array(
                       'info' => '系统出错',
@@ -285,7 +285,7 @@ class Trace
                  '[LINE]'     => $exception->getLine(),
                 );
         error_log($msg);
-        $html = G(TPL_PATH . 'Exception.php', false);
+        $html = read(TPL_PATH . 'Exception.php', false);
         $html = str_replace(array_keys($args), $args, $html);
 
         $ajaxArray = array(
@@ -309,7 +309,7 @@ class Trace
      */
     private static function _outputError($ajaxArray = array(), $html = '')
     {
-        $debugState = C('DEBUG');
+        $debugState = Config::get('DEBUG');
         if(isset($debugState) && !$debugState) {
             return false;
         }

@@ -60,7 +60,7 @@ class Controller
      */
     private function _jump($type, $msg, $url, $delay)
     {
-        $tpl = strtolower(C('PAGE_' . strtoupper($type)));
+        $tpl = strtolower(Config::get('PAGE_' . strtoupper($type)));
         $this->assign('message', $msg);
         $this->assign('url', $url);
         $this->assign('delay', $delay);
@@ -106,7 +106,7 @@ class Controller
      */
     public function display($tplPath = '', $data = array())
     {
-        if (!C('TPL_ENGINE_ON')) {
+        if (!Config::get('TPL_ENGINE_ON')) {
             display($tplPath, $data);
             return;
         }
@@ -114,9 +114,9 @@ class Controller
         if ($tplPath == '') {
             $Controller = App::$controllerName;
             $action     = App::$actionName;
-            $styleSet   = C('TPL_STYLE');
+            $styleSet   = Config::get('TPL_STYLE');
             $style      = empty($styleSet) ? '' : $styleSet . '/';
-            $suffix     = C('TPL_SUFFIX');
+            $suffix     = Config::get('TPL_SUFFIX');
             $tplPath    = strtolower("{$style}{$Controller}/{$action}.{$suffix}");
         }
 
@@ -189,11 +189,11 @@ class Controller
     public function error404($string = '')
     {
         sendHttpStatus(404);
-        if (!C('TPL_ENGINE_ON')) {
+        if (!Config::get('TPL_ENGINE_ON')) {
             trigger_error($string);
         }
         $this->set('errorInfo', $string);
-        $this->display(C('PAGE_404'));
+        $this->display(Config::get('PAGE_404'));
     }
 
     /**
