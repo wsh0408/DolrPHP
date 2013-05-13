@@ -42,6 +42,7 @@ class Controller
     public function error($msg, $url = null, $delay = 2)
     {
         $this->_jump('error', $msg, $url, $delay);
+        exit;
     }
 
     /**
@@ -56,6 +57,7 @@ class Controller
     public function success($msg, $url = null, $delay = 2)
     {
         $this->_jump('success', $msg, $url, $delay);
+        exit;
     }
 
     /**
