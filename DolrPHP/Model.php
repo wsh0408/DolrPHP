@@ -19,20 +19,14 @@
  **/
 class Model
 {
-    protected $tablePrefix = '';
+    //是否初始化过DB配置
+    private static $_isInitialized = false;
 
-    protected function __construct() {
-        $dbConfig = Config::get('DB_SET');
-        if (empty($dbConfig['default']['dbname'])) {
-            throw new DolrException("无数据库配置");
-            return false;
+    public function __construct() {
+        if (!self::$_isInitialized) {
+            Db::initialize(Config::get('DB_SET'), Config::get('DB_ENGINE'));
+            self::$_isInitialized = true;
         }
-        $writer = !empty($dbConfig['writer']) ? $dbConfig['writer'] : $dbConfig['default'];
-        $reader = !empty($dbConfig['reader']) ? $dbConfig['reader'] : $dbConfig['default'];
-        $this->tablePrefix = isset($dbConfig['writer']['prefix']) ? $dbConfig['writer']['prefix'] : '';
-        // init DB
-        Db::initialize($writer, Config::get('DB_ENGINE'), $reader);
-        //Db::setLogger(new Trace);
     }
 
     /**
@@ -43,10 +37,6 @@ class Model
      */
     protected function dispense($tableName)
     {
-        $tableName = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', trim($tableName)));
-        if (!empty($this->tablePrefix) && strpos($tableName, $this->tablePrefix) !== 0 ) {
-            $tableName = $this->tablePrefix . $tableName;
-        }
         return Db::dispense($tableName);
     }
 } // END class Model

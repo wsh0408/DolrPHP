@@ -76,9 +76,8 @@ class Db
     /**
      * 数据库初始化
      *
-     * @param array $writerConfig config of writer
-     * @param array $readerConfig config of reader
-     *
+     * @param array  $dbConfig 数据库配置
+     * @param string $engine   引擎（PDO|Mysqli|Mysql）
      * @example
      * <pre>
      * $writerConfig|$readerConfig = array(
@@ -93,8 +92,13 @@ class Db
      *
      * @return void
      */
-    public static function initialize(array $writerConfig, $engine = self::ENGINT_NONE, array $readerConfig = null)
+    public static function initialize(array $dbConfig, $engine = 'PDO')
     {
+        if (empty($dbConfig['default']['dbname']) && empty($dbConfig['writer']['dbname'])) {
+            throw new Exception("无数据库配置");
+        }
+        $writer = !empty($dbConfig['writer']) ? $dbConfig['writer'] : $dbConfig['default'];
+        $reader = !empty($dbConfig['reader']) ? $dbConfig['reader'] : $dbConfig['default'];
         if (self::$db['writer']) {
             return;
         }
@@ -102,16 +106,16 @@ class Db
         spl_autoload_register('self::_daoAutoLoader');
         try {
             //连接资源
-            self::_setConnector($writerConfig, 'writer');
-            if (isset($writerConfig['prefix'])) {
-                self::$_tablePrefix = $writerConfig['prefix'];
+            self::_setConnector($writer, 'writer');
+            if (isset($writer['prefix'])) {
+                self::$_tablePrefix = $writer['prefix'];
             }
-            if (!is_array($readerConfig)) {
+            if (!is_array($reader)) {
                 self::$db['reader'] = &self::$db['writer'];
                 return;
             }
             //主从分离
-            self::_setConnector($readerConfig, 'reader');
+            self::_setConnector($reader, 'reader');
         } catch (Exception $e) {
             throw $e;
         }
@@ -126,6 +130,9 @@ class Db
      */
     public static function dispense($tableName)
     {
+        if (is_null(self::$_engine)) {
+            throw new Exception("请先初始化数据库配置：Db::initialize()");
+        }
         $tableName = self::_getTableName($tableName);
         try {
             if (is_null(self::$_adapter)) {
@@ -152,6 +159,7 @@ class Db
      */
     private static function _getTableName($tableName)
     {
+        $tableName = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', trim($tableName)));
         if (!empty(self::$_tablePrefix) && strpos($tableName, self::$_tablePrefix) === 0) {
             return $tableName;
         }

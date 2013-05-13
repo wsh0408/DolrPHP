@@ -21,6 +21,16 @@ class Controller
 {
 
     /**
+     * initialize
+     *
+     * @return void
+     */
+    protected function init()
+    {
+        # do nothing
+    }
+
+    /**
      * 操作失败提示
      *
      * @param  string $msg   消息
@@ -29,7 +39,7 @@ class Controller
      *
      * @return void
      */
-    public function error($msg, $url, $delay)
+    public function error($msg, $url = null, $delay = 2)
     {
         $this->_jump('error', $msg, $url, $delay);
     }
@@ -43,7 +53,7 @@ class Controller
      *
      * @return void
      */
-    public function success($msg, $url, $delay)
+    public function success($msg, $url = null, $delay = 2)
     {
         $this->_jump('success', $msg, $url, $delay);
     }
@@ -58,12 +68,15 @@ class Controller
      *
      * @return void
      */
-    private function _jump($type, $msg, $url, $delay)
+    private function _jump($type, $msg, $url, $delay = 2)
     {
+        if (is_null($url)) {
+            $url = $_SERVER['HTTP_REFERER']; //来源页面
+        }
         $tpl = strtolower(Config::get('PAGE_' . strtoupper($type)));
-        $this->assign('message', $msg);
-        $this->assign('url', $url);
-        $this->assign('delay', $delay);
+        $this->set('message', $msg);
+        $this->set('url', $url);
+        $this->set('delay', $delay);
         $this->display($tpl);
     }
 

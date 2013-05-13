@@ -311,8 +311,9 @@ abstract class DB_Adapter
         if (empty($data)) {
             return false;
         }
-        $sql = $this->_createSql(self::SQL_TYPE_INSERT, '', $data);
-        $res = $this->query($sql,$data);
+        $sql  = $this->_createSql(self::SQL_TYPE_INSERT, '', $data);
+        $data = $this->_filterFields($data);
+        $res  = $this->query($sql,$data);
         if (!$res) {
             return false;
         }
@@ -609,10 +610,10 @@ abstract class DB_Adapter
             throw new Exception("未初始化目标数据表");
         }
         if (!empty($data)) {
-            $data = $this->_filterFields($data);
+            $data   = $this->_filterFields($data);
             $fields = array_keys($data);
         } else {
-            $fields = $this->tableMeta['fields'];
+            $fields = $this->_tableMeta['_fields'];
         }
         switch ($sqlType) {
             case self::SQL_TYPE_SELECT:
