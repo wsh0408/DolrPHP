@@ -89,10 +89,32 @@ class Trace
      */
     public static $tplName = '';
 
+    /**
+     * 日志文件
+     *
+     * @var string
+     */
+    public static $errorLogFile = '';
+
 
     public static function initialize()
     {
-        # code...
+        //关闭错误输出
+        error_reporting(0);
+        //设置错误处理函数
+        set_error_handler(array('Trace','errorHandler'));
+        //设置致命错误处理函数
+        register_shutdown_function(array('Trace','shutdownHandler'));
+        //设置异常处理函数
+        set_exception_handler(array('Trace','exceptionHandler'));
+        //强制输出编码为UTF-8
+        header('Content-Type: text/html; charset=utf-8');
+        //自动转义
+        define('MAGIC_QUOTES_GPC',get_magic_quotes_gpc());
+        //关闭自动转义
+        ini_set('magic_quotes_runtime', 0);
+        //时区
+        date_default_timezone_set('PRC');
     }
 
     /**
@@ -140,7 +162,7 @@ class Trace
             E_RECOVERABLE_ERROR => '致命错误'
         );
         $errorType = array_key_exists($errorType, $errTypes) ? $errTypes[$errorType] : '未知错误';
-        $msg       = vsprintf("%s: '%s'. 位置:%s:%s", func_get_args());
+        $msg       = vsprintf("%s: '%s'. 位置:%s:%s\n", func_get_args());
         error_log($msg);
         array_push(self::$errorInfo, $msg);
     }
@@ -166,41 +188,6 @@ class Trace
     }
 
     /**
-     * Trace格式化
-     *
-     * @param array $dbgTrace trace info
-     * @param array $retArray    return array
-     *
-     * @return string
-     */
-    public static function traceFormat($dbgTrace, $retArray = false) {
-        $result = array();
-        foreach ($dbgTrace as $dbgIndex => $dbgInfo) {
-            $args = array();
-            foreach ($dbgInfo['args'] as $arg) {
-                if (is_array($arg)) {
-                    array_push($args, 'Array');
-                } elseif (is_bool($arg)) {
-                    array_push($args, (bool)$arg);
-                } elseif (is_object($arg)) {
-                    array_push($args, 'Object');
-                } elseif (is_string($arg)) {
-                    array_push($args, $arg);
-                } else {
-                    array_push($args, gettype($arg));
-                }
-            }
-            $result[] = "#{$dbgIndex} " . $dbgInfo['file']
-                        . " (line {$dbgInfo['line']}) -> {$dbgInfo['function']}( "
-                        . join(",", $args) . " )";
-        }
-        if ($array)
-            return $result;
-
-        return '<ul><li>' . join('</li><li>', $result) . '</li></ul>';
-    }
-
-    /**
      * Trace信息输出
      *
      * @return mixed
@@ -220,9 +207,9 @@ class Trace
         //当前页面
         $currentFile = $_SERVER['SCRIPT_FILENAME'];
         //模块目录
-        $moduleDir = C('CONTROLLER_PATH') . ucfirst(App::$controllerName) . C('CONTROLLER_IDENTITY') . '.php';
+        $moduleDir = Config::get('CONTROLLER_PATH') . ucfirst(App::$controllerName) . Config::get('CONTROLLER_IDENTITY') . '.php';
         //模板目录
-        $tplDir = empty(self::$tplName) ? '未使用模板或页面出错！' : C('VIEW_PATH') . self::$tplName;
+        $tplDir = empty(self::$tplName) ? '未使用模板或页面出错！' : Config::get('TPL_PATH') . self::$tplName;
 
         //加载的类
         $classes  = '<ol><li>' . join('</li><li>', self::$loadedClasses) . '</li></ol>';
@@ -237,7 +224,7 @@ class Trace
                      '[CLASSES]'      => $classes,
                      '[RUN_INFO]'     => $runInfo
                     );
-        $html = G(C('PAGE_TRACE'), false);
+        $html = read(TPL_PATH . 'Trace.php', false);
         $html = str_replace(array_keys($args), $args, $html);
 
         return $html;
@@ -256,24 +243,22 @@ class Trace
     public static function errorHandler($errorNo, $errorString, $errorFile, $errorLine)
     {
         self::error($errorNo, $errorString, $errorFile, $errorLine);
-        if ($errorNo) {
-            $args = array(
+        $args = array(
                      '[MESSAGE]'  => $errorString,
                      '[FILENAME]' => $errorFile,
                      '[LINE]'     => $errorLine
                     );
-            $html = G(C('PAGE_SYSERROR'), false);
-            $html = str_replace(array_keys($args), $args, $html);
-            $ajaxArray = array(
-                          'info' => '系统出错',
-                          'data' => array(
-                                     'info' => $errorString,
-                                     'file' => $errorFile,
-                                     'line' => $errorLine,
-                                    ),
-                         );
-            self::_outputError($ajaxArray, $html);
-        }
+        $html = read(TPL_PATH . 'SysError.php', false);
+        $html = str_replace(array_keys($args), $args, $html);
+        $ajaxArray = array(
+                      'info' => '系统出错',
+                      'data' => array(
+                                 'info' => $errorString,
+                                 'file' => $errorFile,
+                                 'line' => $errorLine,
+                                ),
+                     );
+        self::_outputError($ajaxArray, $html);
     }
 
     /**
@@ -297,14 +282,9 @@ class Trace
      */
     public static function exceptionHandler($exception)
     {
-        //Trace模板
-        $traceLine = "<li class='%s'><span>#%s</span><span title='函数'>%s(%s)</span>
-                        <span title='文件位置'>%s : %s</span></li>";
-        $msg       = "出错啦！: '%s' 类出现 '%s' 异常.
-                        位置:%s:%s\nStack trace:\n%s\n  thrown in %s on line %s";
+        $msg  = "出错啦！: '%s' 类出现 '%s' 异常. 位置:%s:%s\n";
         // trace
         $dbgTrace  = array_reverse($exception->getTrace());
-        $traceInfo = self::traceFormat($dbgTrace);
         //格式化msg
         $msg = sprintf(
                     $msg,
@@ -312,18 +292,15 @@ class Trace
                     $exception->getMessage(),
                     $exception->getFile(),
                     $exception->getLine(),
-                    join("\n", $traceInfo),
-                    $exception->getFile(),
-                    $exception->getLine()
+                    $exception->getFile()
                 );
         $args = array(
                  '[MESSAGE]'  => $exception->getMessage(),
                  '[FILENAME]' => $exception->getFile(),
                  '[LINE]'     => $exception->getLine(),
-                 '[TRACE]'    => $traceInfo,
                 );
         error_log($msg);
-        $html = G(C('PAGE_EXCEPTION'), false);
+        $html = read(TPL_PATH . 'Exception.php', false);
         $html = str_replace(array_keys($args), $args, $html);
 
         $ajaxArray = array(
@@ -347,8 +324,10 @@ class Trace
      */
     private static function _outputError($ajaxArray = array(), $html = '')
     {
-        if(!C('DEBUG'))
+        $debugState = Config::get('DEBUG');
+        if(isset($debugState) && !$debugState) {
             return false;
+        }
         if (Request::isAjax())
             exit(data2json($ajaxArray));
         exit($html);

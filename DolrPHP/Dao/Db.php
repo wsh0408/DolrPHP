@@ -55,14 +55,23 @@ class Db
      *
      * @var string
      */
-    protected static $tablePrefix = '';
+    protected static $_tablePrefix = '';
 
     /**
      * 日志对象
      *
      * @var object
      */
-    protected static $logger = null;
+    protected static $_logs = '';
+
+    protected static $_configSample = array(
+                                        'host'    => 'localhost', //数据库主机,
+                                        'dbname'  => 'dolrphp', //数据库名称,
+                                        'user'    => 'root',    //用户名
+                                        'pass'    => '',    //密码
+                                        'prefix'  => '',    //数据表前缀
+                                        'charset' => 'utf8',//字符集
+                                        );
 
     /**
      * 数据库初始化
@@ -95,7 +104,7 @@ class Db
             //连接资源
             self::_setConnector($writerConfig, 'writer');
             if (isset($writerConfig['prefix'])) {
-                self::$tablePrefix = $writerConfig['prefix'];
+                self::$_tablePrefix = $writerConfig['prefix'];
             }
             if (!is_array($readerConfig)) {
                 self::$db['reader'] = &self::$db['writer'];
@@ -121,6 +130,9 @@ class Db
         try {
             if (is_null(self::$_adapter)) {
                 $adapter = 'DB_Adapter_' . ucfirst(self::$_engine);
+                if (!class_exists($adapter)) {
+                    throw new Exception("适配器'{$adapter}'不存在!", 1);
+                }
                 //实例化适配器
                 self::$_adapter = new $adapter(self::$db['writer'], self::$db['reader']);
             }
@@ -140,10 +152,10 @@ class Db
      */
     private static function _getTableName($tableName)
     {
-        if (!empty(self::$tablePrefix) && strpos($tableName, self::$tablePrefix) === 0) {
+        if (!empty(self::$_tablePrefix) && strpos($tableName, self::$_tablePrefix) === 0) {
             return $tableName;
         }
-        return self::$tablePrefix . $tableName;
+        return self::$_tablePrefix . $tableName;
     }
 
 
@@ -162,6 +174,7 @@ class Db
         if(self::$db[$object])
             return true;
         try {
+            $config = array_merge(self::$_configSample, $config);
             $config['charset'] = isset($config['charset']) ? $config['charset'] : 'utf8';
             self::$db[$object] = self::_connect($config['host'], $config['user'],
                                     $config['pass'], $config['dbname'], $config['charset']);
@@ -227,7 +240,7 @@ class Db
      *
      * @return PDO
      */
-    private static function getPdo($host, $user, $pass, $dbName, $charset)
+    public static function getPdo($host, $user, $pass, $dbName, $charset)
     {
         try {
             $dsn = self::_createDSN($host, $dbName);
@@ -252,9 +265,13 @@ class Db
      *
      * @return Mysqli
      */
-    private static function getMysqli($host, $user, $pass, $dbName, $charset)
+    public static function getMysqli($host, $user, $pass, $dbName, $charset)
     {
         try {
+            if (!extension_loaded('mysqlnd')) {
+                throw new Exception("使用Mysqli连接方式需要启用'mysqlnd'拓展");
+                return false;
+            }
             $mysqli = new Mysqli($host, $user, $pass, $dbName);
             $mysqli->set_charset($charset);
             return $mysqli;
@@ -274,7 +291,7 @@ class Db
      *
      * @return Mysqli
      */
-    private static function getMysql($host, $user, $pass, $dbName, $charset)
+    public static function getMysql($host, $user, $pass, $dbName, $charset)
     {
         try {
             $mysql = mysql_connect($host, $user, $pass);
@@ -321,23 +338,6 @@ class Db
         } else {
             throw new Exception('没有可用的数据库连接工具');
         }
-    }
-
-    /**
-     * 将数组转换成 ActiveRecord
-     *
-     * @return array | object
-     */
-    public static function toAR($tableName, $data)
-    {
-        reset($data);
-        if (is_array($data)) { //如果第一个元素是数组则为二维
-            foreach ($data as &$val) {
-                $val = new Db_ActiveRecord($tableName, $val);
-            }
-        }
-
-        return $data;
     }
 
 }

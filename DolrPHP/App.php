@@ -11,11 +11,13 @@
  * @version     $Id: Joychao $
  **/
 
-//include class trace
+// include class trace
 include DOLR_PATH . 'Trace.php';
-//include functions
-include INC_PATH . 'Functions.php';
-//dispatcher
+// include config
+include DOLR_PATH . 'Config.php';
+// include functions
+include DOLR_PATH . 'Functions.php';
+// include dispatcher
 include DOLR_PATH . 'Dispatcher.php';
 
 /**
@@ -26,12 +28,6 @@ include DOLR_PATH . 'Dispatcher.php';
  **/
 class App
 {
-    /**
-     * 应用名称
-     *
-     * @var string
-     */
-    public static $name;
 
     /**
      * 应用的url
@@ -59,18 +55,18 @@ class App
     public static $actionName;
 
     /**
-     * 应用的配置
-     *
-     * @var array
-     */
-    public static $config = array();
-
-    /**
      * 模板引擎实例
      *
      * @var object
      **/
     public static $tplEngine = null;
+
+    /**
+     * 模板变量
+     *
+     * @var array
+     */
+    public static $template_var = array();
 
     /**
      * App 运行结果
@@ -89,56 +85,50 @@ class App
         spl_autoload_register('dolrAutoLoader');
 
         //应用目录
-        if (!file_exists(APP_PATH)
-            && false === makeDir(APP_PATH, 0777)) {
-            throw new DolrException('应用目录"' . APP_PATH . '"不存在,尝试创建失败！');
-        }
-
-        //加载应用配置文件
-        $appConfig = APP_PATH . 'config.php';
-        if (!file_exists($appConfig)) {
-            $tmp = file_get_contents(INC_PATH . 'ConfigSample.php');
-            W($appConfig, $tmp, false);
-        }
+        self::_checkAppPath();
 
         //初始化配置
-        self::_initAppConfig(include $appConfig);
+        $appConfig = self::_getAppConfig();
+        Config::initialize($appConfig);
+
+        //设置错误日志文件路径
+        self::_setErrorLogPath();
+
+         //初始化路由
+        Dispatcher::initialize((array)Config::get('ROUTING_TABLE'));
+        $controllerName       = Dispatcher::$module;
+        $action               = Dispatcher::$action;
 
         //目录检测
         self::_initAppDir();
 
         //开启session
-        if (C('SESSION_AUTO_START')) {
+        if (Config::get('SESSION_AUTO_START')) {
             session_start();
         }
 
-        //初始化路由
-        Dispatcher::initialize(C('ROUTING_TABLE'));
-
         //获取应用当前的URL并定义为常量
-        $appUrlInfo = current_urli(true);
-        self::$url = $appUrlInfo['base_dir_url'];
-
-        //将框架拓展目录加载到包含目录
-        set_include_path(INC_PATH . PATH_SEPARATOR . get_include_path());
+        self::$url = Dispatcher::generateUrl($controllerName, $action);
 
         //包含应用全局调用文件public.php
         self::_includeAppPublicFile();
 
-        //如果使用模板引擎则实例化模板引擎
-        if (C('VIEW_ENGINE_ON')) {
-            self::_initViewEngine();
-        }
-
-        $controller = ucfirst(Dispatcher::$module . C('CONTROLLER_IDENTITY'));
+        //初始化控制器
+        $controller = ucfirst($controllerName . Config::get('CONTROLLER_IDENTITY'));
         if (!class_exists($controller)) {
             self::$controller = new Controller();
             throw new DolrException("控制器 '{$controller}' 文件不存在！");
         }
-
         self::$controller = new $controller();
-        self::$controllerName = $controller;
-        self::$actionName = Dispatcher::$action;
+        self::$controllerName = $controllerName;
+        self::$actionName     = $action;
+
+        //如果使用模板引擎则实例化模板引擎
+        if (Config::get('TPL_ENGINE_ON')) {
+            self::_initViewEngine();
+            self::_setTemplateCommonVar();
+            self::_setTemplateCommonFunction();
+        }
     }
 
     /**
@@ -152,7 +142,7 @@ class App
     {
         $action = self::$actionName;
         //call initialize
-        if (is_callable(array(self::$controller, 'initialize')))
+        if (is_callable(array(self::$controller, 'init')))
             self::$controller->initialize();
         //call action
         if (is_callable(array(self::$controller, $action))) {
@@ -182,29 +172,135 @@ class App
     }
 
     /**
+     * 检测应用目录并尝试创建
+     *
+     * @return void
+     */
+    private static function _checkAppPath()
+    {
+        if (!file_exists(APP_PATH)
+            && false === makeDir(APP_PATH, 0777)) {
+            throw new DolrException('应用目录"' . APP_PATH . '"不存在,尝试创建失败！');
+        }
+        defined('APP_ABS_PATH') || define('APP_ABS_PATH',
+                                    str_replace('\\', '/', realpath(APP_PATH) . '/'));
+    }
+
+    /**
      * 实例化模板引擎对象
      *
      * @return object
      */
     private static function _initViewEngine()
     {
-        $options = array(
-                    'template_dir'    => C('VIEW_PATH'), //模板目录
-                    'compile_dir'     => C('RUNTIME_PATH') . 'compile/', //编译目录
-                    'cache_dir'       => C('RUNTIME_PATH') . 'cache/', //缓存目录
-                    'caching'         => (bool)C('VIEW_CACHE'), //是否缓存
-                    'cache_lifetime'  => C('VIEW_CACHE_LIFETIME'), //缓存有效期
-                    'tpl_suffix'      => C('VIEW_SUFFIX'), //模板后缀
-                    'left_delimiter'  => C('VIEW_LDELIM'), //模板左定界符
-                    'right_delimiter' => C('VIEW_RDELIM'), //模板右定界符
-                   );
+        $config = array('debug' => Config::get('DEBUG'));
+        if ((bool)Config::get('TPL_CACHE')) {
+            $config = array_merge($config, array('cache' => Config::get('RUNTIME_PATH') . 'cache/'));
+        }
         try {
-            $tplEngine = DolrView::getInstance($options);
-            $tplEngine->replace = C('VIEW_REPLACEMENT'); //注册替换变量数据
+            require_once DOLR_PATH . '/Twig/Autoloader.php';
+            Twig_Autoloader::register();
+            $loader = new Twig_Loader_Filesystem(array(TPL_PATH, Config::get('TPL_PATH')));
+            $twig   = new Twig_Environment($loader, $config);
+            self::$tplEngine = $twig;
         } catch (DolrException $e) {
             throw $e;
         }
-        self::$tplEngine = $tplEngine;
+    }
+
+    /**
+     * 设置模板全局公用变量
+     *
+     * @example
+     * <pre>
+     * array(
+     *    'IMG_PATH' => '/assets/images/',
+     *    'CSS_PATH' => '/assets/css/',
+     *    'JS_PATH'  => '/assets/js/',
+     * );
+     * </pre>
+     *
+     * @return void
+     */
+    private static function _setTemplateCommonVar()
+    {
+        $baseVar = array(
+                    'APP_ROOT'        => APP_ROOT,
+                    'ACTION_NAME'     => self::$actionName,
+                    'CONTROLLER_NAME' => self::$controllerName,
+                    //TODO: other var
+                   );
+        self::$template_var = array_merge(
+                                self::$template_var, $baseVar,
+                                Config::get('TPL_COMMON_VAR')
+                              );
+    }
+
+    /**
+     * 设置模板通用函数
+     *
+     * @return void
+     */
+    private static function _setTemplateCommonFunction()
+    {
+        $functionArray = array(
+                          'url'         => 'createUrl',
+                          'cookie'      => 'cookie',
+                          'session'     => 'session',
+                          'byte_format' => 'byteFormat',
+                          'msubstr'     => 'msubstr',
+                         );
+        self::addTemplateFunction($functionArray);
+    }
+
+    /**
+     * 添加模板函数
+     *
+     * @param string|array $function 要添加的函数，可是使用字符串或者数组
+     *
+     * @example
+     * <pre>
+     *
+     * App::addTemplateFunction(
+     *                      array('url' => 'U'),
+     *                      array('xxx' => 'xxxx'),
+     *                       ...
+     *                     );
+     * in template:
+     * {% url('Actor/actorList') %}
+     * act as:
+     * echo U('Actor/actorList');
+     * ---------------- or --------------------------
+     * App::addTemplateFunction('url');
+     * in template:
+     * {% url('Actor/actorList') %}
+     * act as:
+     * echo url('Actor/actorList');
+     * </pre>
+     *
+     * @return boolean
+     */
+    public static function addTemplateFunction($function)
+    {
+        if (is_array($function)) {
+            foreach ($function as $alias => $functionName) {
+                    self::$tplEngine->addFunction(
+                        new Twig_SimpleFunction($alias, function() use ($functionName){
+                            echo call_user_func_array($functionName, func_get_args());
+                        }));
+            }
+
+            return true;
+        } elseif (is_string($function)) {
+            self::$tplEngine->addFunction(
+                        new Twig_SimpleFunction($function, function() use ($functionName){
+                            echo call_user_func_array($function, func_get_args());
+                        }));
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -215,20 +311,20 @@ class App
     private static function _initAppDir()
     {
         //目录检测与创建
-        if (C('DIR_CHECK')) {
+        if (Config::get('DIR_CHECK')) {
             $appDirs = array(
-                        C('CONTROLLER_PATH'),
-                        C('MODEL_PATH'),
-                        C('VIEW_PATH'),
-                        C('PUBLIC_PATH'),
-                        C('RUNTIME_PATH'),
-                        C('EXTENSION_PATH'),
+                        Config::get('CONTROLLER_PATH'),
+                        Config::get('MODEL_PATH'),
+                        Config::get('TPL_PATH'),
+                        Config::get('ASSETS_PATH'),
+                        Config::get('RUNTIME_PATH'),
+                        Config::get('EXTENSION_PATH'),
                        );
             foreach ($appDirs as $dir) {
                 if (!file_exists($dir) && false === makeDir($dir, 0777)) {
                     throw new DolrException('应用目录"' . $dir . '"不存在,尝试创建失败！');
                 }
-                if ($dir == C('CONTROLLER_PATH')) {
+                if ($dir == Config::get('CONTROLLER_PATH')) {
                     //设置控制器标识
                     self::_writeDefaultController();
                 }
@@ -242,27 +338,38 @@ class App
      * @return void
      */
     private static function _writeDefaultController() {
-        $controller = C('CONTROLLER_PATH') . 'Index' . C('CONTROLLER_IDENTITY') . '.php';
+        $controller = Config::get('CONTROLLER_PATH') . 'Index' . Config::get('CONTROLLER_IDENTITY') . '.php';
         if (file_exists($controller)) {
             return;
         }
+        $demo = "<?php\n//这是一个demo 控制器\nclass Index__IDENTITY__ extends Controller\n{\n
+            \tpublic function index()\n\t{\n\t\t\$this->display('welcome.php');\n\t}\n}";
         //写入默认控制器
-        $content = str_replace('__IDENTITY__', C('CONTROLLER_IDENTITY'),
-                     G(INC_PATH . 'ControllerSample.php', false));
-        W($controller, $content, false);
+        $content = str_replace('__IDENTITY__', Config::get('CONTROLLER_IDENTITY'), $demo);
+        write($controller, $content, false);
     }
 
     /**
-     * 初始化配置
-     *
-     * @param  array  $appConfig 应用配置
+     * 读取应用配置
      *
      * @return array
      */
-    private static function _initAppConfig(array $appConfig)
+    private static function _getAppConfig()
     {
-        $defaultConfig = include INC_PATH . 'ConfigBase.php';
-        self::$config = array_merge($defaultConfig, $appConfig);
+        try {
+            //加载应用配置文件
+            $appConfigPath = APP_PATH . 'config.php';
+            if (!file_exists($appConfigPath)) {
+                $demo = "<?php\nreturn array(\n\t\t//'设置项1' => '设置值1',
+                    \n\t\t//'设置项2' => '设置值2',\n\t\t// ... \n\t );";
+                write($appConfigPath, $demo, false);
+            }
+            return include $appConfigPath;
+        } catch (Exception $e) {
+            throw new Exception("配置文件有语法错误");
+
+        }
+
     }
 
     /**
@@ -275,7 +382,7 @@ class App
         $appCommon = APP_PATH . 'public.php';
         if (!file_exists($appCommon)) {
             $tmp = "<?php\n//此文件为应用共用文件，会在应用全局引用，可以放置公用函数和全局变量";
-            W($appCommon, $tmp, false);
+            write($appCommon, $tmp, false);
         }
         include $appCommon;
     }
@@ -291,6 +398,17 @@ class App
     private static function _log($string, $type = Trace::LOG_TYPE_ERROR)
     {
         Trace::L($string, $type);
+    }
+
+    /**
+     * 设置日志位置
+     *
+     * @return void
+     */
+    private static function _setErrorLogPath()
+    {
+        ini_set('log_errors', true);
+        ini_set('error_log', Config::get('RUNTIME_PATH') . 'error.log');
     }
 
 } // END class Dolr

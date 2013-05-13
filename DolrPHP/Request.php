@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架
  *
- * @package     DolrPHPs
+ * @package     DolrPHP
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
@@ -29,9 +29,9 @@ class Request
         if (isset($_REQUEST['GLOBALS']) or isset($_FILES['GLOBALS'])) {
             throw new DolrException("数据可能非法", 1);
         }
-        $_GET    = C('XSS_AUTO_FITER_ON') ? self::filterData($_GET) : $_GET;
-        $_POST   = C('XSS_AUTO_FITER_ON') ? self::filterData($_POST) : $_POST;
-        $_COOKIE = C('XSS_AUTO_FITER_ON') ? self::filterData($_COOKIE) : $_COOKIE;
+        $_GET    = Config::get('XSS_AUTO_FITER_ON') ? self::filterData($_GET) : $_GET;
+        $_POST   = Config::get('XSS_AUTO_FITER_ON') ? self::filterData($_POST) : $_POST;
+        $_COOKIE = Config::get('XSS_AUTO_FITER_ON') ? self::filterData($_COOKIE) : $_COOKIE;
     }
 
     /**
@@ -44,9 +44,9 @@ class Request
     public static function filterData($val)
     {
         if (is_array($val)) {
-            $val = array_map('self::removeXSS',$val); //Inc/functions.php
+            $val = array_map('self::removeXSS',$val);
         } elseif (is_string($val)) {
-            $val = self::filterData($value); //Inc/functions.php
+            $val = self::filterData($value);
         }
 
         return $val;
@@ -60,8 +60,8 @@ class Request
     public static function isAjax()
     {
         //如果自定义了AJAX请求标记
-        if (C('AJAX_SIGN')) {
-            return isset($_REQUEST[C('AJAX_SIGN')])
+        if (Config::get('AJAX_SIGN')) {
+            return isset($_REQUEST[Config::get('AJAX_SIGN')])
                     || (isset($_SERVER["HTTP_X_REQUESTED_WITH"])
                     && strtolower($_SERVER["HTTP_X_REQUESTED_WITH"]) == "xmlhttprequest");
         }

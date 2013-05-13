@@ -764,11 +764,11 @@ class Twig_Environment
             $filter = $name;
             $name = $filter->getName();
         }
-        
+
         if ($this->extensionInitialized) {
             throw new LogicException(sprintf('Unable to add filter "%s" as extensions have already been initialized.', $name));
         }
-        
+
         $this->staging->addFilter($name, $filter);
     }
 
@@ -853,7 +853,7 @@ class Twig_Environment
             $test = $name;
             $name = $test->getName();
         }
-        
+
         if ($this->extensionInitialized) {
             throw new LogicException(sprintf('Unable to add test "%s" as extensions have already been initialized.', $name));
         }
@@ -911,11 +911,11 @@ class Twig_Environment
             $function = $name;
             $name = $function->getName();
         }
-        
+
         if ($this->extensionInitialized) {
             throw new LogicException(sprintf('Unable to add function "%s" as extensions have already been initialized.', $name));
         }
-        
+
         $this->staging->addFunction($name, $function);
     }
 
@@ -1103,7 +1103,7 @@ class Twig_Environment
             if (!is_array($extGlob)) {
                 throw new UnexpectedValueException(sprintf('"%s::getGlobals()" must return an array of globals.', get_class($extension)));
             }
-            
+
             $globals = array_merge($globals, $extGlob);
         }
 
@@ -1200,7 +1200,7 @@ class Twig_Environment
     {
         $dir = dirname($file);
         if (!is_dir($dir)) {
-            if (false === @mkdir($dir, 0777, true) && !is_dir($dir)) {
+            if (false === @mkdir($dir, 0755, true) && !is_dir($dir)) {
                 throw new RuntimeException(sprintf("Unable to create the cache directory (%s).", $dir));
             }
         } elseif (!is_writable($dir)) {

@@ -19,24 +19,34 @@
  **/
 class Model
 {
-    public function __construct($tableName = '') {
-        $dbConfig = C('DB_SET');
-        if (empty($dbConfig['default']['name'])) {
+    protected $tablePrefix = '';
+
+    protected function __construct() {
+        $dbConfig = Config::get('DB_SET');
+        if (empty($dbConfig['default']['dbname'])) {
             throw new DolrException("无数据库配置");
             return false;
         }
         $writer = !empty($dbConfig['writer']) ? $dbConfig['writer'] : $dbConfig['default'];
         $reader = !empty($dbConfig['reader']) ? $dbConfig['reader'] : $dbConfig['default'];
+        $this->tablePrefix = isset($dbConfig['writer']['prefix']) ? $dbConfig['writer']['prefix'] : '';
         // init DB
-        Db::initialize($writer, $reader);
-        Db::setLogger(new Trace);
-        if (empty($tableName)) { // 如果用户直接 new MemberModel()的话，得取文件名为表名
-            $className = get_class($this);
-            $tableName = substr($className, 0, -strlen(C('MODEL_IDENTITY')));
-        }
+        Db::initialize($writer, Config::get('DB_ENGINE'), $reader);
+        //Db::setLogger(new Trace);
+    }
 
-        $tableName = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', $tableName));
-        $tableName = strpos($tableName, $prefix) === FALSE ? $prefix . $tableName : $tableName;
+    /**
+     * 实例化一个表对象
+     *
+     * @param string $tableName 表名（不用带前缀）
+     * @return object
+     */
+    protected function dispense($tableName)
+    {
+        $tableName = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', trim($tableName)));
+        if (!empty($this->tablePrefix) && strpos($tableName, $this->tablePrefix) !== 0 ) {
+            $tableName = $this->tablePrefix . $tableName;
+        }
         return Db::dispense($tableName);
     }
 } // END class Model
