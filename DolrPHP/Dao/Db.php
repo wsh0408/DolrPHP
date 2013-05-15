@@ -136,7 +136,7 @@ class Db
         $tableName = self::_getTableName($tableName);
         try {
             if (is_null(self::$_adapter)) {
-                $adapter = 'DB_Adapter_' . ucfirst(self::$_engine);
+                $adapter = 'DB_Adapter_' . ucfirst(strtolower(self::$_engine));
                 if (!class_exists($adapter)) {
                     throw new Exception("适配器'{$adapter}'不存在!", 1);
                 }
