@@ -226,6 +226,7 @@ class App
     {
         $baseVar = array(
                     'APP_ROOT'        => APP_ROOT,
+                    'CURRENT_URL'     => self::$url,
                     'ACTION_NAME'     => self::$actionName,
                     'CONTROLLER_NAME' => self::$controllerName,
                     //TODO: other var
