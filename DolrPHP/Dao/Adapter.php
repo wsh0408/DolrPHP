@@ -595,6 +595,12 @@ abstract class DB_Adapter
         }
     }
 
+    public function where()
+    {
+        # TODO:$table->where('id'=>array(1,2,3))->delete();
+        return $this;
+    }
+
     /**
      * 返回完整的SQL语句
      *
