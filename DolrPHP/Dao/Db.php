@@ -122,18 +122,15 @@ class Db
     }
 
     /**
-     * 实例化一个表
-     *
-     * @param string $tableName table name
+     * 获取adapter对象
      *
      * @return
      */
-    public static function dispense($tableName)
+    public static function getAdapter()
     {
         if (is_null(self::$_engine)) {
             throw new Exception("请先初始化数据库配置：Db::initialize()");
         }
-        $tableName = self::_getTableName($tableName);
         try {
             if (is_null(self::$_adapter)) {
                 $adapter = 'DB_Adapter_' . ucfirst(strtolower(self::$_engine));
@@ -141,9 +138,8 @@ class Db
                     throw new Exception("适配器'{$adapter}'不存在!", 1);
                 }
                 //实例化适配器
-                self::$_adapter = new $adapter(self::$db['writer'], self::$db['reader']);
+                self::$_adapter = new $adapter(self::$db['writer'], self::$db['reader'], self::$_tablePrefix);
             }
-            self::$_adapter->dispenseTable($tableName);
             return self::$_adapter;
         } catch (Exception $e) {
             throw $e;
@@ -276,10 +272,6 @@ class Db
     public static function getMysqli($host, $user, $pass, $dbName, $charset)
     {
         try {
-            if (!extension_loaded('mysqlnd')) {
-                throw new Exception("使用Mysqli连接方式需要启用'mysqlnd'拓展");
-                return false;
-            }
             $mysqli = new Mysqli($host, $user, $pass, $dbName);
             $mysqli->set_charset($charset);
             return $mysqli;

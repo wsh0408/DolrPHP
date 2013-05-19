@@ -93,7 +93,7 @@ class Controller
     public function ajax($data, $info = '')
     {
         if (!headers_sent()) {
-            header('content-type: application/json; charset=utf-8');
+            //header('content-type: application/json; charset=utf-8');
         }
         exit(data2json(array('info' => $info, 'data' => $data)));
     }

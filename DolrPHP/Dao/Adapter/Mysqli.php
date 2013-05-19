@@ -20,64 +20,47 @@ class Db_Adapter_Mysqli extends Db_Adapter
     /**
      * 执行一个SQL查询,返回结果集
      *
-     * @param string $sql       SQL
-     * @param array  $params    values to bind
-     * @param PDO    &$connector connector
+     * @param string $sql SQL
      *
      * @return mixed
      */
-    public function exec($sql, array $params = array())
+    public function exec($sql)
     {
         try {
-            $stmt = $this->_connector->stmt_init();
-            $stmt->prepare($sql);
-            if (!empty($params)) {
-                $this->_bindParams($stmt, $params);
-            }
-            $stmt->execute();
-            $this->_lastInsertId = $stmt->insert_id;
-            return $this->stmt = $stmt;
+            $res = $this->_connector->query($sql);
+            $this->_lastInsertId = $res->insert_id;
+            return $res;
         } catch (PDOException $e) {
             throw $e;
         }
     }
 
-    protected function _bindParams($stmt, $params)
+    protected function fetchArray($res)
     {
-        $types = str_repeat('s', count($params));
-        foreach ($params as $key => &$value) {
-            $value = &$value;
-        }
-        array_unshift($params, $types);
-        call_user_func_array(array($stmt,'bind_param'), $params);
+        return $this->_fetchResult($res,'array');
     }
 
-    protected function fetchArray($stmt)
+    protected function fetchNum($res)
     {
-        return $this->_fetchResult($stmt,'array');
+        return $this->_fetchResult($res,'num');
     }
 
-    protected function fetchNum($stmt)
+    protected function fetchAssoc($res)
     {
-        return $this->_fetchResult($stmt,'num');
+        return $this->_fetchResult($res,'assoc');
     }
 
-    protected function fetchAssoc($stmt)
+    protected function fetchObject($res)
     {
-        return $this->_fetchResult($stmt,'assoc');
+        return $this->_fetchResult($res,'object');
     }
 
-    protected function fetchObject($stmt)
+    protected function _fetchResult($res, $fetchStyle)
     {
-        return $this->_fetchResult($stmt,'object');
-    }
-
-    protected function _fetchResult($stmt, $fetchStyle)
-    {
-        if (!method_exists($stmt, 'get_result')) {
+        if (!method_exists($res, 'get_result')) {
             return false;
         }
-        $result = $stmt->get_result();
+        $result = $res->get_result();
         $fetchFunc = 'fetch_' . strtolower($fetchStyle);
         if (!method_exists($result, $fetchFunc)) {
             return false;
@@ -97,7 +80,7 @@ class Db_Adapter_Mysqli extends Db_Adapter
 
     protected function getAffectedRows()
     {
-        return $this->stmt->affected_rows;
+        return $this->res->affected_rows;
     }
 
     public function close()

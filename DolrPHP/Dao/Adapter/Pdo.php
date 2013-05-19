@@ -17,25 +17,22 @@
 class Db_Adapter_Pdo extends Db_Adapter
 {
 
+    private $_affectedRows = 0;
+
     /**
      * 执行一个SQL查询,返回结果集
      *
-     * @param string $sql       SQL
-     * @param array  $params    values to bind
-     * @param PDO    &$connector connector
+     * @param string $sql SQL
      *
      * @return mixed
      */
-    public function exec($sql, array $params = array())
+    public function exec($sql)
     {
         try {
             $stmt = $this->_connector->prepare($sql);
-            if (empty($params)) {
-                $stmt->execute();
-            } else {
-                $stmt->execute(array_values($params));
-            }
-            return $this->stmt = $stmt;
+            $stmt->execute();
+            $this->_affectedRows = $stmt->rowCount();
+            return $stmt;
         } catch (PDOException $e) {
             throw $e;
         }
@@ -78,7 +75,7 @@ class Db_Adapter_Pdo extends Db_Adapter
 
     protected function getAffectedRows()
     {
-        return $this->stmt->rowCount();
+        return $this->_affectedRows;
     }
 
     public function close()

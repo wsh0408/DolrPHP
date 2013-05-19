@@ -20,28 +20,17 @@ class Db_Adapter_Mysql extends Db_Adapter
     /**
      * 执行一个SQL查询,返回结果集
      *
-     * @param string $sql       SQL
-     * @param array  $params    values to bind
-     * @param PDO    &$connector connector
+     * @param string $sql SQL
      *
      * @return mixed
      */
-    public function exec($sql, array $params = array())
+    public function exec($sql)
     {
         try {
-            $sql = $this->_buildSql($sql, $params);
             return mysql_query($sql);
         } catch (PDOException $e) {
             throw $e;
         }
-    }
-
-    protected function _buildSql($sql, array $params)
-    {
-        $params = array_map('mysql_real_escape_string', array_values($params));
-        $sqlFormat = str_replace('?', "'%s'", $sql);
-        array_unshift($params, $sqlFormat);
-        return $this->_lastSql = call_user_func_array('sprintf', $params);
     }
 
     protected function fetchArray($resource)

@@ -37,6 +37,6 @@ class Model
      */
     protected function dispense($tableName)
     {
-        return Db::dispense($tableName);
+        return Db::getAdapter()->dispense($tableName);
     }
 } // END class Model

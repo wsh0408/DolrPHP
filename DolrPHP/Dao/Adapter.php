@@ -35,7 +35,7 @@ abstract class DB_Adapter
     /**
      * log type
      */
-    const LOG_TYPE_SQL = 'sql';
+    const LOG_TYPE_SQL   = 'sql';
     const LOG_TYPE_ERROR = 'error';
 
     /**
@@ -51,7 +51,6 @@ abstract class DB_Adapter
      */
     protected $_writer;
 
-
      /**
      * reader
      *
@@ -65,6 +64,13 @@ abstract class DB_Adapter
      * @var object
      */
     protected $_connector;
+
+    /**
+     * 表前缀
+     *
+     * @var string
+     */
+    protected $tablePrefix;
 
     /**
      * 表结构
@@ -88,14 +94,29 @@ abstract class DB_Adapter
      */
     protected $_lastSql;
 
+    /**
+     * SQL 结构（用于连贯操作）
+     *
+     * @var array
+     */
+    protected $_sqlStructure = array();
+    /**
+     * 用于insert或者update的数据
+     *
+     * @var array
+     */
+    public $_data = array();
+
 
     /**
      * construtor
      *
-     * @param PDO $writer pdo instance to write data
-     * @param PDO $reader pdo instance to read data
+     * @param PDO $writer      pdo instance to write data
+     * @param PDO $reader      pdo instance to read data
+     * @param PDO $tablePrefix prefix of data table
+     *
      */
-    public function __construct($writer, $reader = null)
+    public function __construct($writer, $reader = null, $tablePrefix = '')
     {
         if (!is_null($this->_writer)) {
             return;
@@ -106,6 +127,8 @@ abstract class DB_Adapter
         } else {
             $this->_reader = $writer;
         }
+        $this->tablePrefix = $tablePrefix;
+        $this->_sqlStructure = $this->_resetSqlStructure();
     }
 
     /**
@@ -115,8 +138,11 @@ abstract class DB_Adapter
      *
      * @return
      */
-    public function dispenseTable($tableName)
+    public function dispense($tableName)
     {
+        if (strpos($tableName, $this->tablePrefix) === false) {
+            $tableName = $this->tablePrefix . $tableName;
+        }
         $tableMeta = $this->_getTableMetaInfo($tableName);
         if (!$tableMeta || empty($tableMeta)) {
             throw new Exception("数据表 '{$tableName}' 不存在或读取失败", 1);
@@ -124,6 +150,24 @@ abstract class DB_Adapter
         $this->_tableMeta = $tableMeta;
 
         return $this;
+    }
+
+    /**
+     * 重置SQL结构
+     *
+     * @return array
+     */
+    public function _resetSqlStructure()
+    {
+        return array(
+                'FIELDS' => '*',
+                'FROM'   => '',
+                'JOIN'   => '',
+                'ON'     => '',
+                'WHERE'  => '',
+                'ORDER'  => '',
+                'LIMIT'  => '',
+               );
     }
 
     /**
@@ -162,11 +206,11 @@ abstract class DB_Adapter
     /**
      * 过滤输入数据
      *
-     * @param array  $data   input data
+     * @param array $data input data
      *
      * @return array
      */
-    protected function _filterFields($data)
+    protected function _filterData($data)
     {
         if (empty($this->_tableMeta)) {
             throw new Exception("未初始化目标数据表");
@@ -187,59 +231,37 @@ abstract class DB_Adapter
      * 执行一个完整SQL查询
      *
      * @param string $sql       SQL
-     * @param array  $params    values to bind
      * @param array  $fetchType fetch type (assoc|num|array|object)
      *
      * @return mixed
      */
-    public function query($sql, array $params = array(), $fetchType = self::FETCH_TYPE_ASSOC)
+    public function query($sql, $fetchType = self::FETCH_TYPE_ASSOC)
     {
-        $sqlType = preg_match('/([a-z]+)\s+/i', $sql, $matches);
+        if (empty($sql)) {
+            throw new Exception("empty sql");
+        }
+        preg_match('/^([a-z]+)\s+/i', $sql, $matches);
         $sql = rtrim($sql, ';');
+        $this->_connector = &$this->_writer;
         switch (strtoupper($matches[1])) {
             case 'INSERT':
-                $this->_connector = &$this->_writer;
-                $this->exec($sql, $params);
+                $this->exec($sql);
                 $ret = $this->getInsertId();
                 break;
             case 'DELETE':
             case 'UPDATE':
-                $this->_connector = &$this->_writer;
-                $res = $this->exec($sql, $params);
+                $res = $this->exec($sql);
                 $ret = $this->getAffectedRows($res);
                 break;
             default:
                 $this->_connector = &$this->_reader;
-                $res = $this->exec($sql, $params);
+                $res = $this->exec($sql);
                 $ret = $this->_fetch($res, $fetchType);
                 break;
         }
-        $this->_setLastSql($sql, $params);
-
+        $this->_setLastSql = $sql;
+        $this->_sqlStructure = $this->_resetSqlStructure();
         return $ret;
-    }
-
-    /**
-     * 设置最后一次查询的SQL
-     *
-     * @param string $sql    SQL
-     * @param array  $params values to bind
-     *
-     * @return void
-     */
-    protected function _setLastSql($sql, $params)
-    {
-        // 拼装一个完整的SQL用于调试
-        foreach ($params as $key => &$value) {
-            if (!is_numeric($value) && mb_strlen($value) > 10) {
-                $value = addcslashes(mb_substr($value, 0, 10), "'");
-                $value = "{$value}...";//不用显示全部
-            }
-            $value = "'{$value}'";
-        }
-        $sqlFormat = str_replace('?', "%s", $sql);
-        array_unshift($params, $sqlFormat);
-        $this->_lastSql = call_user_func_array('sprintf', $params);
     }
 
     /**
@@ -280,20 +302,6 @@ abstract class DB_Adapter
     }
 
     /**
-     * 提取数组中的第一个元素
-     *
-     * @param array $array 结果数组
-     * @return mixed
-     */
-    public function fetchOne($array)
-    {
-        if (empty($array)) {
-            return $array;
-        }
-        return array_shift($array);
-    }
-
-    /**
      * 添加记录
      *
      * @param array $data 关联数组[字段 => 值]
@@ -311,9 +319,9 @@ abstract class DB_Adapter
         if (empty($data)) {
             return false;
         }
-        $sql  = $this->_createSql(self::SQL_TYPE_INSERT, '', $data);
-        $data = $this->_filterFields($data);
-        $res  = $this->query($sql,$data);
+        $this->_data = $this->_filterData($data);
+        $sql = $this->_getSql(self::SQL_TYPE_INSERT);
+        $res = $this->query($sql);
         if (!$res) {
             return false;
         }
@@ -323,65 +331,69 @@ abstract class DB_Adapter
     /**
      * 删除记录
      *
-     * @param string $sql    SQL
+     * @param string $condition  'where' of sql
      * @param array  $values values to bind
      *
      * @return bool
      */
-    public function del($sql, array $values = array())
+    public function del($condition, array $values = array())
     {
-        $sql = $this->_createSql(self::SQL_TYPE_DELETE, $sql, $values);
-        return $this->query($sql, $values);
+        if (!empty($condition)) {
+            $this->_sqlStructure['WHERE'] = strval($condition);
+        }
+        $sql = $this->_getSql(self::SQL_TYPE_DELETE);
+        return $this->query($sql);
     }
 
     /**
      * 获取一条记录 , getRow别名方法
      *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
+     * @param string $condition  'where' of sql
      * @param array  $fetchType fetch type (assoc|num|array|object)
      *
      * @return array
      */
-    public function find($sql = '', array $values = array(), $fetchStyle = self::FETCH_TYPE_ASSOC)
+    public function find($condition = '', $fetchStyle = self::FETCH_TYPE_ASSOC)
     {
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql);
-        $sql .= " LIMIT 1";
-        return $this->_fetchOne($this->query($sql, $values, $fetchStyle));
+        $this->_sqlStructure['LIMIT'] = '1';
+        return array_shift($this->select($condition, $fetchStyle));
     }
 
     /**
      * 查询多条记录
      *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
-     * @param array  $fetchType fetch type (assoc|num|array|object)
+     * @param string $condition  'where' of sql
+     * @param array  $fetchStyle fetch type (assoc|num|array|object)
      * @return array
      */
-    public function select($sql = '', array $values = array(), $fetchStyle = self::FETCH_TYPE_ASSOC)
+    public function select($condition = '', $fetchStyle = self::FETCH_TYPE_ASSOC)
     {
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql);
-        return $this->query($sql, $values, $fetchStyle);
+        if (!empty($condition)) {
+            $this->_sqlStructure['WHERE'] = strval($condition);
+        }
+        $sql = $this->_getSql(self::SQL_TYPE_SELECT);
+        return $this->query($sql, $fetchStyle);
     }
-
 
     /**
      * 更新记录
      *
-     * @param array  $data   data to insert
-     * @param string $sql    where condition
-     * @param array  $values values to bind
+     * @param array  $data      data to insert
+     * @param string $condition where condition
      *
      * @return bool|mixed
      */
-    public function save(array $data, $sql = '')
+    public function save(array $data, $condition = '')
     {
         if (empty($data)) {
             return false;
         }
-        $data = $this->_filterFields($data);
-        $sql = $this->_createSql(self::SQL_TYPE_UPDATE, $sql, $data);
-        $res = $this->query($sql,$data);
+        $this->_data = $this->_filterData($data);
+        if (!empty($condition)) {
+            $this->_sqlStructure['WHERE'] = strval($condition);
+        }
+        $sql = $this->_getSql(self::SQL_TYPE_UPDATE);
+        $res = $this->query($sql);
         if (false === $res) {
             return false;
         }
@@ -393,7 +405,7 @@ abstract class DB_Adapter
      * 设置一条记录
      * 如果不存在则add($data),存在则save($data)
      *
-     * @param array $data 数据
+     * @param array  $data        数据
      * @param string $checkFields 需要检测的字段，判断存在与否的字段
      */
     public function set(array $data, $checkFields)
@@ -401,7 +413,7 @@ abstract class DB_Adapter
         if (empty($data)) {
             return false;
         }
-        $data = $this->_filterFields($data);
+        $data = $this->_filterData($data);
         if (empty($checkFields)) {
             $checkFields = array_keys($data);
         } elseif (is_string($checkFields)) {
@@ -409,53 +421,43 @@ abstract class DB_Adapter
                             explode(',', $checkFields) : array(trim($checkFields));
         }
         $condition = array();
-        foreach ($checkFields as $key) {
-            if (!isset($data[$key])) {
-                continue;
-            }
-            $condition = "`{$key}` = ?";
-        }
-        $sql = "WHERE ".join(' AND ', $condition);
-        if ($this->find($sql, $data)) {
-            $this->save($data);
+        if ($this->find($condition)) {
+            return $this->save($data);
         }
     }
 
     /**
      * 查询一条记录，返回二维数组
      *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
+     * @param string $condition 'where' of sql
+     * @param array  $fetchType fetch type (assoc|num|array|object)
      *
      * @return array
      */
-    public function getRow($sql = '', array $values = array())
+    public function getRow($condition = '', $fetchStyle = self::FETCH_TYPE_ASSOC)
     {
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        $sql .= " LIMIT 1";
-        return $this->_fetchOne($this->query($sql, $values));
+        return $this->find($condition, $fetchStyle);
     }
 
     /**
-     * 查询满足条件的所有
-     * @param string $sql      SQL
-     * @param array  $values   values to bind
+     * 查询满足条件的所有记录
+     *
+     * @param string $condition 'where' of sql
+     * @param array  $fetchType fetch type (assoc|num|array|object)
      *
      * @return array
      */
-    public function getAll($sql = '', array $values = array(), $fetchStyle = self::FETCH_TYPE_ASSOC)
+    public function getAll($condition = '', $fetchStyle = self::FETCH_TYPE_ASSOC)
     {
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        return $this->query($sql, $values, $fetchStyle);
+        return $this->select($condition, $fetchStyle);
     }
 
     /**
      * 查询一列值，返回一维数组
      *
      * @param string  $colName      field name
+     * @param string  $condition    'where' of sql
      * @param boolean $convertTo2D  trans the result to Two-dimension array
-     * @param string  $sql          SQL
-     * @param array   $values       values to bind
      *
      * @example
      * <pre>
@@ -473,7 +475,7 @@ abstract class DB_Adapter
      * </pre>
      * @return array
      */
-    public function getCol($colName, $convertTo2D = false, $sql = '', array $values = array())
+    public function getCol($colName, $condition = '', $convertTo2D = false)
     {
         if (empty($this->_tableMeta)) {
             throw new Exception("未初始化目标数据表");
@@ -482,8 +484,8 @@ abstract class DB_Adapter
             $this->_log("表'{$this->_tableMeta['_name']}'不存在字段'{$colName}'");
             return false;
         }
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        $result = $this->query($sql, $values);
+        $this->_sqlStructure['FIELDS'] = $colName;
+        $result = $this->select($condition);
         $cols = array();
         $cols2D = array();
         foreach ($result as $value) {
@@ -501,21 +503,18 @@ abstract class DB_Adapter
      * 此方法会返回一条记录中一个字段的值，常用于查询一个具体的值
      * 比如查询用户表里id = 1 的用户名（username），将会返回一个具体的string 值
      *
-     * @param string $cellName cell name
-     * @param string $sql      SQL
-     * @param array  $values   values to bind
+     * @param string $cellName  cell name
+     * @param string $condition 'where' of sql
      *
      * @return string $singleValue value from cell
      */
-    public function getCell($cellName, $sql = '', array $values = array())
+    public function getCell($cellName, $condition = '')
     {
-        if (!in_array($colName, $this->_tableMeta['_fields'])) {
+        if (!in_array($cellName, $this->_tableMeta['_fields'])) {
             $this->_log("表'{$this->_tableMeta['_name']}'不存在字段'{$cellName}'");
             return false;
         }
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values, "`$cellName`");
-        $sql .= "LIMIT 1";
-        $res = $this->_fetchOne($this->query($sql, $values));
+        $res = $this->find($condition);
         if ($res && isset($res[$cellName])) {
             return $res[$cellName];
         }
@@ -527,59 +526,50 @@ abstract class DB_Adapter
      * 得到一个关联数组结果集
      * 此方法只适用于单条记录，多条记录不适用
      *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
+     * @param string $condition  'where' of sql
      *
      * @return array $associativeArray associative array result set
      */
-    public function getAssoc($sql = '', array $values = array())
+    public function getAssoc($condition = '')
     {
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        $sql .= "LIMIT 1";
-        return $this->_fetchOne($this->query($sql, $values, self::FETCH_TYPE_ASSOC));
+        return $this->find($condition);
     }
 
     /**
      * 得到一个关联数组结果集
      * 此方法只适用于单条记录，多条记录不适用
      *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
+     * @param string $condition  'where' of sql
      *
      * @return array $associativeArray associative array result set
      */
-    public function getObject($sql = '', array $values = array())
+    public function getObject($condition = '')
     {
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        $sql .= "LIMIT 1";
-        return $this->_fetchOne($this->query($sql, $values, self::FETCH_TYPE_OBJECT));
+        return $this->find($condition, self::FETCH_TYPE_OBJECT);
     }
 
     /**
      * 得到一个关联数组结果集
      * 此方法只适用于多条记录，单条记录不适用
      *
-     * @param string $sql    SQL
-     * @param array  $values values to bind
+     * @param string $condition  'where' of sql
      *
      * @return array $associativeArray associative array result set
      */
-    public function getObjects($sql = '', array $values = array())
+    public function getObjects($condition = '')
     {
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values);
-        return $this->query($sql, $values, self::FETCH_TYPE_OBJECT);
+        return $this->select($condition, self::FETCH_TYPE_OBJECT);
     }
 
     /**
      * 查询总条数
      *
      * @param string $field  field name
-     * @param string $sql    SQL
-     * @param array  $values values to bind
+     * @param string $condition  'where' of sql
      *
      * @return int amount of records
      */
-    public function getCount($field = '', $sql = '', array $values = array())
+    public function getCount($field = '', $condition = '')
     {
         if (empty($this->_tableMeta)) {
             throw new Exception("未初始化目标数据表");
@@ -587,18 +577,11 @@ abstract class DB_Adapter
         if (empty($field) || !is_array($field, $this->_tableMeta['_fields'])) {
             $field = $this->_tableMeta['_pk'];
         }
-        $sql = $this->_createSql(self::SQL_TYPE_SELECT, $sql, $values, "COUNT(`{$field}`) AS `count`");
-        $sql .= "LIMIT 1";
-        $res = $this->_fetchOne($this->query($sql, $values));
+        $this->_sqlStructure['FIELDS'] = "COUNT(`{$field}`) AS `count`";
+        $res = $this->find($condition);
         if ($res) {
             return $res['count'];
         }
-    }
-
-    public function where()
-    {
-        # TODO:$table->where('id'=>array(1,2,3))->delete();
-        return $this;
     }
 
     /**
@@ -608,56 +591,61 @@ abstract class DB_Adapter
      * @param  string $sql       sql width '?'
      * @param  array  $data      data to bind
      * @param  array  $fieldArea field set,default is *
+     *
      * @return string
      */
-    protected function _createSql($sqlType, $sql, $data = array(), $fieldArea = '*')
+    protected function _getSql($sqlType, $data = array())
     {
         if (empty($this->_tableMeta)) {
             throw new Exception("未初始化目标数据表");
         }
-        if (!empty($data)) {
-            $data   = $this->_filterFields($data);
-            $fields = array_keys($data);
-        } else {
-            $fields = $this->_tableMeta['_fields'];
-        }
+        $tableName = $this->_tableMeta['_name'];
+        $fields = empty($this->_sqlStructure['FIELDS']) ? '*' : $this->_sqlStructure['FIELDS'];
+        $from   = empty($this->_sqlStructure['FROM']) ? " FROM `{$tableName}`" : " FROM {$this->_sqlStructure['FROM']}";
+        $join   = empty($this->_sqlStructure['JOIN']) ? '' : " JOIN {$this->_sqlStructure['JOIN']}";
+        $on     = empty($this->_sqlStructure['ON']) ? '' : " ON {$this->_sqlStructure['ON']}";
+        $where  = empty($this->_sqlStructure['WHERE']) ? '' : " WHERE {$this->_sqlStructure['WHERE']}";
+        $order  = empty($this->_sqlStructure['ORDER']) ? '' : " ORDER BY {$this->_sqlStructure['ORDER']}";
+        $limit  = empty($this->_sqlStructure['LIMIT']) ? '' : " LIMIT {$this->_sqlStructure['LIMIT']}";
+        $sql = '';
+        $this->_data = array_map('mysql_escape_string', $this->_data);
         switch ($sqlType) {
             case self::SQL_TYPE_SELECT:
-                $sql = "SELECT {$fieldArea} FROM `{$this->_tableMeta['_name']}` {$sql} ";
+                $sql = "SELECT {$fields}{$from}{$join}{$on}{$where}{$order}{$limit}";
                 break;
             case self::SQL_TYPE_DELETE:
-                $sql = "DELETE FROM `{$this->_tableMeta['_name']}` {$sql} ";
+                $sql = "DELETE {$from}{$join}{$on}{$where}{$order}{$limit}";
                 break;
             case self::SQL_TYPE_UPDATE:
-                if (empty($data)) {
+                if (empty($this->_data)) {
                     return false;
                 }
                 $arr = array();
-                foreach ($fields as $field) {
-                    $arr[] = "`{$field}` = ? ";
+                foreach ($this->_data as $field => $value) {
+                    $arr[] = "`{$field}` = '{$value}'";
                 }
                 $setString = join(',', $arr);
-                $sql = "UPDATE `{$this->_tableMeta['_name']}` SET {$setString} {$sql} ";
+                $sql = "UPDATE `{$tableName}` SET {$setString}{$where}{$order}{$limit} ";
                 break;
             case self::SQL_TYPE_INSERT:
-                if (empty($data)) {
+                if (empty($this->_data)) {
                     return false;
                 }
-                $keys = join(',', $fields);
-                $valuesFlag = join(',', array_fill(0, count($fields), '?'));
-                $sql = "INSERT INTO `{$this->_tableMeta['_name']}`({$keys}) VALUES({$valuesFlag}) ";
+                $keys   = join(',', array_keys($this->_data));
+                $values = '"' . join('","', $this->_data) . '"';
+                $sql    = "INSERT INTO `{$tableName}`({$keys}) VALUES({$values}) ";
                 break;
             default:
                 break;
         }
-
-        return $sql;
+        return trim($sql);
     }
 
     /**
-     * 属性名称
+     * getter
      *
      * @param string $proName property name
+     *
      * @return mixed
      */
     public function __get($proName)
@@ -675,41 +663,56 @@ abstract class DB_Adapter
         }
     }
 
+     /**
+     * setter
+     *
+     * @param string $proName  property name
+     * @param string $proValue value of property
+     *
+     * @return mixed
+     */
+    public function __set($proName, $value)
+    {
+        switch (strtolower($proName)) {
+            case 'data':
+                return $this->_data = $value;
+                break;
+        }
+    }
+
     /**
-     * 魔术方法
-     * 只适用于单条记录
+     * 连贯操作
+     * and
      * getBy+首字母大写的字段名
      *
-     * @example
-     * <pre>
-     * $obj->getByUsername('admin')
-     * $obj->getById(5)
-     * $obj->getByFIldName('hello');
-     * ...
-     * </pre>
-     *
      * @param string $methodName 字段名
-     * @param mx  $
+     * @param mixed  $args       参数
      *
      * @return mixed
      */
     public function __call($methodName, $args)
     {
-        //实现假继承
-        if (method_exists($this, $methodName)) {
-            return call_user_func_array(array($this, $methodName), $args);
-        }
-
-        //getByUsername
-        if (false === strpos($methodName, 'getBy') or empty($args)) {
-            return false;
-        }
-
-        //取字段名:getByUserName =>user_name,getByPassword => password
-        $field = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', substr($methodName, 5)));
-        $sql   = "WHERE `{$field}` = ?";
         $value = array_shift($args);
-        return $this->getRow($sql, array($value));
+        //getByXxx
+        if (0 === strpos($methodName, 'getBy') && !empty($value)) {
+            //取字段名:getByUserName =>user_name,getByPassword => password
+            $field = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', substr($methodName, 5)));
+            if (is_array($value)) {
+                $where = "`{$field}` IN('".join("','", $value)."')";
+            } elseif (is_string($value)) {
+                $where = "`{$field}` = '{$value}'";
+            }
+            return $this->where($where)->getRow();
+        }
+        if (strtolower($methodName) == 'data') {
+            $this->_data = $value;
+        }
+        //连贯操作
+        if (array_key_exists(strtoupper($methodName), $this->_sqlStructure)) {
+            $value = array_shift($args);
+            $this->_sqlStructure[strtoupper($methodName)] = strval($value);
+        }
+        return $this;
     }
 
     /**
@@ -728,7 +731,7 @@ abstract class DB_Adapter
     abstract protected function fetchNum($resource);
     abstract protected function fetchAssoc($resource);
     abstract protected function fetchObject($resource);
-    abstract protected function exec($sql, array $values = array());
+    abstract protected function exec($sql);
     abstract protected function getInsertId();
     abstract protected function getAffectedRows();
     abstract protected function close();
