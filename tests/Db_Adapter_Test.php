@@ -6,9 +6,9 @@ class Db_Adapter_Test extends PHPUnit_Framework_TestCase
     public $dbconfig;
     public $data = array(
                  'user_login'          => 'testUser',
-                 'user_pass'           => '123465',
+                 'user_pass'           => '1234\'65',
                  'user_nicename'       => 'testUserNiceName',
-                 'user_email'          => '44294631@qq.com',
+                 'user_email'          => '4429"4631@qq.com',
                  'user_url'            => 'http://www.joychao.cc',
                  'user_registered'     => '1',
                  'user_activation_key' => '213456457',
@@ -19,8 +19,8 @@ class Db_Adapter_Test extends PHPUnit_Framework_TestCase
     public function init($config, $type)
     {
         $this->db = null;
-        Db::initialize($config, $type);
-        $this->db = Db::dispense('users');
+        Db::initialize(array('default' => $config), $type);
+        $this->db = Db::getAdapter()->dispense('users');
     }
 
     public function testQuery()
@@ -39,13 +39,13 @@ class Db_Adapter_Test extends PHPUnit_Framework_TestCase
     public function testDel()
     {
         $res = $this->db->add($this->data);
-        $deleteResult = $this->db->del('where ID = ?',array($res));
+        $deleteResult = $this->db->del("ID = $res");
         $this->assertEquals('integer', gettype($deleteResult));
     }
 
     public function testFind()
     {
-        $res = $this->db->find();
+        $res = $this->db->where('id = 201')->find();
         $this->assertArrayHasKey('user_login', $res);
     }
 
@@ -61,13 +61,13 @@ class Db_Adapter_Test extends PHPUnit_Framework_TestCase
     public function testSave()
     {
         $data = array('user_login' => 'adminSaved');
-        $res = $this->db->save($data, 'where user_login = "admin"');
+        $res = $this->db->save($data, 'user_login = "admin"');
         $this->assertEquals('integer', gettype($res));
     }
 
     public function testGetRow()
     {
-        $res = $this->db->getRow('where user_login = ?', array('adminSaved'));
+        $res = $this->db->getRow('user_login = "adminSaved"');
         $this->assertArrayHasKey('user_login', $res);
         $this->assertEquals('adminSaved', $res['user_login']);
     }
@@ -99,7 +99,7 @@ class Db_Adapter_Test extends PHPUnit_Framework_TestCase
 
     public function testGetAssoc()
     {
-        $res = $this->db->getAssoc('where user_login = ?', array('adminSaved'));
+        $res = $this->db->getAssoc('user_login = "adminSaved"');
         $this->assertArrayHasKey('ID', $res);
         $this->assertArrayHasKey('user_nicename', $res);
         $this->assertEquals('string', gettype($res['ID']));
@@ -107,7 +107,7 @@ class Db_Adapter_Test extends PHPUnit_Framework_TestCase
 
     public function testGetObject()
     {
-        $res = $this->db->getObject('where user_login = ?', array('adminSaved'));
+        $res = $this->db->getObject('user_login = "adminSaved"');
         $this->assertEquals('object', gettype($res));
         $this->assertObjectHasAttribute('ID', $res);
         $this->assertObjectHasAttribute('user_nicename', $res);
@@ -136,4 +136,12 @@ class Db_Adapter_Test extends PHPUnit_Framework_TestCase
         $this->assertEquals('string', gettype($res['ID']));
     }
 
+    public function testWhere()
+    {
+        $res = $this->db->where('user_login="adminSaved"')->getAll();
+        $this->assertArrayHasKey('user_login', $res[0]);
+        if (count($res) > 1) {
+            $this->assertArrayHasKey('user_login', $res[1]);
+        }
+    }
 }
