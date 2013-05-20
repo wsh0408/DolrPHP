@@ -20,12 +20,12 @@
     <style>
     .clearfix{clear:both;height:0;width:100%;}
     #dolrTraceTool{wdith:100px;position:fixed;bottom:0;right:0;background:#fff;color:#777;padding:5px 10px;font-weight:bold;font-size:16px;box-shadow:0 0 6px #555;}
-    .traceInfo{ position:fixed;left:20%;bottom:5%; clear:both; width:80%; text-align:left;margin:0px auto; margin-bottom:60px;border:1px solid #ccc; width:60%; -webkit-box-shadow: 0px 0px 10px #999 inset;box-shadow: 0px 0px 10px #999 inset; word-break:break-all; background: #fff;font-size:12px;padding:20px; color:#000;z-index:9999999;overflow:hidden;}
+    .traceInfo{ position:fixed;left:20%;bottom:5%; clear:both; width:80%; text-align:left;margin:0px auto; margin-bottom:60px;border:1px solid #ccc; width:60%; -webkit-box-shadow: 0px 0px 10px #999 inset;box-shadow: 0px 0px 10px #999; word-break:break-all; background: #fff;font-size:12px;padding:20px; color:#000;z-index:9999999;overflow:hidden;}
     .traceInfo .red {color:red;}
     .traceInfo *{margin:0;padding:0;font-family:Consolas,Verdana,"Microsoft YaHei", Geneva, sans-serif;}
     .traceInfo .head{ padding: 0 5px 10px 10px; border-bottom: 1px solid #c0c0c0;  }
     .traceInfo .head .hd{font-size:27px;}
-    .traceInfo .head span.close{ position:absolute; right:20px;top:20px; cursor:pointer; padding:0 5px; text-align:center; overflow:hidden; color:#ccc;font-size:22px;}
+    .traceInfo .head span.close{ position:absolute; right:20px;top:20px; cursor:pointer; padding:0 5px; text-align:center; overflow:hidden; color:#777;font-size:22px;}
     .traceInfo .head span.close:hover{color: #444;}
     .traceInfo .content { padding: 10px; color: #666; }
     .traceInfo .content .classList,.traceInfo .content .infoList { border: 1px solid #ccc; padding: 5px; margin: 5px; overflow:auto; max-height:100px;}

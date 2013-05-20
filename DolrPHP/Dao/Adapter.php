@@ -153,81 +153,6 @@ abstract class DB_Adapter
     }
 
     /**
-     * 重置SQL结构
-     *
-     * @return array
-     */
-    public function _resetSqlStructure()
-    {
-        return array(
-                'FIELDS' => '*',
-                'FROM'   => '',
-                'JOIN'   => '',
-                'ON'     => '',
-                'WHERE'  => '',
-                'ORDER'  => '',
-                'LIMIT'  => '',
-               );
-    }
-
-    /**
-     * 获取表
-     *
-     * @param string $tableName table name
-     *
-     * @return array
-     */
-    protected function _getTableMetaInfo($tableName)
-    {
-        $tableInfo = $this->query("SHOW COLUMNS FROM `$tableName`");
-        $data = array();
-        $data['_name']   = $tableName;
-        $data['_fields'] = array();
-        if (empty($tableInfo)) {
-            $this->_log('查询错误: 表"' . $tableName . '"不存在', self::LOG_TYPE_ERROR);
-            return false;
-        }
-        foreach ($tableInfo as $value) {
-            $data['_fields'][] = $value['Field'];
-            if ($value['Key'] == 'PRI') {
-                $data['_pk'] = $value['Field'];
-            }
-        }
-        // 没有主键的话默认第一个字段为主键，谁让你建个表这么不科学！
-        if (!isset($data['pk'])) {
-            reset($data['_fields']);
-            $key = key($data['_fields']);
-            $data['_pk'] = $data['_fields'][$key];
-        }
-
-        return $data;
-    }
-
-    /**
-     * 过滤输入数据
-     *
-     * @param array $data input data
-     *
-     * @return array
-     */
-    protected function _filterData($data)
-    {
-        if (empty($this->_tableMeta)) {
-            throw new Exception("未初始化目标数据表");
-        }
-        //清空values
-        $output = array();
-        foreach ($data as $key => $value) {
-            if (!in_array($key, $this->_tableMeta['_fields'])) {
-                continue;
-            }
-            $output[$key] = $value;
-        }
-
-        return $output;
-    }
-
-    /**
      * 执行一个完整SQL查询
      *
      * @param string $sql       SQL
@@ -262,43 +187,6 @@ abstract class DB_Adapter
         $this->_setLastSql = $sql;
         $this->_sqlStructure = $this->_resetSqlStructure();
         return $ret;
-    }
-
-    /**
-     * 提取结果集
-     *
-     * @param resource $resource  query resource
-     * @param string   $fetchType fetch type [array, num, assoc, object]
-     *
-     * @return array or boolean
-     */
-    protected function _fetch($resource, $fetchType)
-    {
-        if (!is_resource($resource) && !is_object($resource)) {
-            return $resource;
-        }
-        switch ($fetchType) {
-            case self::FETCH_TYPE_ASSOC:
-                $res = $this->fetchAssoc($resource);
-                break;
-            case self::FETCH_TYPE_NUM:
-                $res = $this->fetchNum($resource);
-                break;
-            case self::FETCH_TYPE_OBJECT:
-                $res = $this->fetchObject($resource);
-                break;
-            case self::FETCH_TYPE_ARRAY:
-                $res = $this->fetchArray($resource);
-                break;
-            default:
-                $res = false;
-                break;
-        }
-        if (false === $res) {
-            return false;
-        }
-
-        return $res;
     }
 
     /**
@@ -709,7 +597,6 @@ abstract class DB_Adapter
         }
         //连贯操作
         if (array_key_exists(strtoupper($methodName), $this->_sqlStructure)) {
-            $value = array_shift($args);
             $this->_sqlStructure[strtoupper($methodName)] = strval($value);
         }
         return $this;
@@ -725,6 +612,118 @@ abstract class DB_Adapter
     protected function _log($string, $type = 'error')
     {
         error_log($string);
+    }
+
+     /**
+     * 重置SQL结构
+     *
+     * @return array
+     */
+    public function _resetSqlStructure()
+    {
+        return array(
+                'FIELDS' => '*',
+                'FROM'   => '',
+                'JOIN'   => '',
+                'ON'     => '',
+                'WHERE'  => '',
+                'ORDER'  => '',
+                'LIMIT'  => '',
+               );
+    }
+
+    /**
+     * 获取表
+     *
+     * @param string $tableName table name
+     *
+     * @return array
+     */
+    protected function _getTableMetaInfo($tableName)
+    {
+        $tableInfo = $this->query("SHOW COLUMNS FROM `$tableName`");
+        $data = array();
+        $data['_name']   = $tableName;
+        $data['_fields'] = array();
+        if (empty($tableInfo)) {
+            $this->_log('查询错误: 表"' . $tableName . '"不存在', self::LOG_TYPE_ERROR);
+            return false;
+        }
+        foreach ($tableInfo as $value) {
+            $data['_fields'][] = $value['Field'];
+            if ($value['Key'] == 'PRI') {
+                $data['_pk'] = $value['Field'];
+            }
+        }
+        // 没有主键的话默认第一个字段为主键，谁让你建个表这么不科学！
+        if (!isset($data['pk'])) {
+            reset($data['_fields']);
+            $key = key($data['_fields']);
+            $data['_pk'] = $data['_fields'][$key];
+        }
+
+        return $data;
+    }
+
+    /**
+     * 过滤输入数据
+     *
+     * @param array $data input data
+     *
+     * @return array
+     */
+    protected function _filterData($data)
+    {
+        if (empty($this->_tableMeta)) {
+            throw new Exception("未初始化目标数据表");
+        }
+        //清空values
+        $output = array();
+        foreach ($data as $key => $value) {
+            if (!in_array($key, $this->_tableMeta['_fields'])) {
+                continue;
+            }
+            $output[$key] = $value;
+        }
+
+        return $output;
+    }
+
+    /**
+     * 提取结果集
+     *
+     * @param resource $resource  query resource
+     * @param string   $fetchType fetch type [array, num, assoc, object]
+     *
+     * @return array or boolean
+     */
+    protected function _fetch($resource, $fetchType)
+    {
+        if (!is_resource($resource) && !is_object($resource)) {
+            return $resource;
+        }
+        switch ($fetchType) {
+            case self::FETCH_TYPE_ASSOC:
+                $res = $this->fetchAssoc($resource);
+                break;
+            case self::FETCH_TYPE_NUM:
+                $res = $this->fetchNum($resource);
+                break;
+            case self::FETCH_TYPE_OBJECT:
+                $res = $this->fetchObject($resource);
+                break;
+            case self::FETCH_TYPE_ARRAY:
+                $res = $this->fetchArray($resource);
+                break;
+            default:
+                $res = false;
+                break;
+        }
+        if (false === $res) {
+            return false;
+        }
+
+        return $res;
     }
 
     abstract protected function fetchArray($resource);
