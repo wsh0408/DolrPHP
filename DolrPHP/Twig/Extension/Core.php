@@ -951,7 +951,6 @@ function twig_escape_filter(Twig_Environment $env, $string, $strategy = 'html', 
             if (version_compare(PHP_VERSION, '5.3.0', '<')) {
                 return str_replace('%7E', '~', rawurlencode($string));
             }
-
             return rawurlencode($string);
 
         default:

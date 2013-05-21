@@ -244,7 +244,8 @@ abstract class DB_Adapter
     public function find($condition = '', $fetchStyle = self::FETCH_TYPE_ASSOC)
     {
         $this->_sqlStructure['LIMIT'] = '1';
-        return array_shift($this->select($condition, $fetchStyle));
+        $result = $this->select($condition, $fetchStyle);
+        return array_shift($result);
     }
 
     /**
@@ -287,31 +288,6 @@ abstract class DB_Adapter
         }
 
         return $res;
-    }
-
-    /**
-     * 设置一条记录
-     * 如果不存在则add($data),存在则save($data)
-     *
-     * @param array  $data        数据
-     * @param string $checkFields 需要检测的字段，判断存在与否的字段
-     */
-    public function set(array $data, $checkFields)
-    {
-        if (empty($data)) {
-            return false;
-        }
-        $data = $this->_filterData($data);
-        if (empty($checkFields)) {
-            $checkFields = array_keys($data);
-        } elseif (is_string($checkFields)) {
-            $checkFields = stripos($checkFields, ',') ?
-                            explode(',', $checkFields) : array(trim($checkFields));
-        }
-        $condition = array();
-        if ($this->find($condition)) {
-            return $this->save($data);
-        }
     }
 
     /**

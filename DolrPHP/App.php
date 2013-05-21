@@ -193,7 +193,8 @@ class App
      */
     private static function _initViewEngine()
     {
-        $config = array('debug' => Config::get('DEBUG'));
+        $debug  = Config::get('DEBUG');
+        $config = array('debug' => $debug);
         if ((bool)Config::get('TPL_CACHE')) {
             $config = array_merge($config, array('cache' => Config::get('RUNTIME_PATH') . 'cache/'));
         }
@@ -202,6 +203,9 @@ class App
             Twig_Autoloader::register();
             $loader = new Twig_Loader_Filesystem(array(TPL_PATH, Config::get('TPL_PATH')));
             $twig   = new Twig_Environment($loader, $config);
+            if ($debug) {
+                $twig->addExtension(new Twig_Extension_Debug());
+            }
             self::$tplEngine = $twig;
         } catch (DolrException $e) {
             throw $e;
