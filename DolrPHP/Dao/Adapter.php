@@ -192,7 +192,8 @@ abstract class DB_Adapter
     /**
      * 添加记录
      *
-     * @param array $data 关联数组[字段 => 值]
+     * @param array   $data        关联数组[字段 => 值]
+     * @param boolean $multiInsert 多条插入
      *
      * @example
      * <pre>
@@ -224,7 +225,7 @@ abstract class DB_Adapter
      *
      * @return bool
      */
-    public function del($condition, array $values = array())
+    public function del($condition = '', array $values = array())
     {
         if (!empty($condition)) {
             $this->_sqlStructure['WHERE'] = strval($condition);
@@ -464,6 +465,9 @@ abstract class DB_Adapter
             throw new Exception("未初始化目标数据表");
         }
         $tableName = $this->_tableMeta['_name'];
+        if (is_array($this->_sqlStructure['WHERE'])) {
+            $this->_sqlStructure['WHERE'] = $this->array2Where($this->_sqlStructure['WHERE']);
+        }
         $fields = empty($this->_sqlStructure['FIELDS']) ? '*' : $this->_sqlStructure['FIELDS'];
         $from   = empty($this->_sqlStructure['FROM']) ? " FROM `{$tableName}`" : " FROM {$this->_sqlStructure['FROM']}";
         $join   = empty($this->_sqlStructure['JOIN']) ? '' : " JOIN {$this->_sqlStructure['JOIN']}";
@@ -496,13 +500,31 @@ abstract class DB_Adapter
                     return false;
                 }
                 $keys   = join(',', array_keys($this->_data));
-                $values = '"' . join('","', $this->_data) . '"';
-                $sql    = "INSERT INTO `{$tableName}`({$keys}) VALUES({$values}) ";
+                $value = '"' . join('","', $this->_data) . '"';
+                $sql    = "INSERT INTO `{$tableName}`({$keys}) VALUES({$value})";
                 break;
             default:
                 break;
         }
+        $this->_multiInsert = false;
         return trim($sql);
+    }
+
+    /**
+     * 生成where条件
+     *
+     * @param array $where 关联数组形式的where
+     *
+     * @return string
+     */
+    public function array2Where($where)
+    {
+        $tmp = array();
+        foreach ($where as $key => $value) {
+            $tmp[] = "`{$key}` = '{$value}'";
+        }
+
+        return join(' AND ', $tmp);
     }
 
     /**
@@ -573,7 +595,7 @@ abstract class DB_Adapter
         }
         //连贯操作
         if (array_key_exists(strtoupper($methodName), $this->_sqlStructure)) {
-            $this->_sqlStructure[strtoupper($methodName)] = strval($value);
+            $this->_sqlStructure[strtoupper($methodName)] = $value;
         }
         return $this;
     }
