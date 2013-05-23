@@ -585,7 +585,7 @@ abstract class DB_Adapter
             $field = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', substr($methodName, 5)));
             if (is_array($value)) {
                 $where = "`{$field}` IN('".join("','", $value)."')";
-            } elseif (is_string($value)) {
+            } elseif (is_scalar($value)) {
                 $where = "`{$field}` = '{$value}'";
             }
             return $this->where($where)->getRow();
@@ -596,8 +596,9 @@ abstract class DB_Adapter
         //连贯操作
         if (array_key_exists(strtoupper($methodName), $this->_sqlStructure)) {
             $this->_sqlStructure[strtoupper($methodName)] = $value;
+            return $this;
         }
-        return $this;
+        return "method ‘$methodName’ not exists!";
     }
 
     /**
