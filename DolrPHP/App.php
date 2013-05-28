@@ -229,6 +229,7 @@ class App
     private static function _setTemplateCommonVar()
     {
         $baseVar = array(
+                    'DOLRPHP_VERSION' => DOLRPHP_VERSION,
                     'APP_ROOT'        => APP_ROOT,
                     'CURRENT_URL'     => self::$url,
                     'ACTION_NAME'     => self::$actionName,
@@ -289,6 +290,9 @@ class App
     {
         if (is_array($function)) {
             foreach ($function as $alias => $functionName) {
+                    if (!preg_match('/^[a-z]/i', $alias)) {//以字母开头
+                        $alias = $functionName;
+                    }
                     self::$tplEngine->addFunction(
                         new Twig_SimpleFunction($alias, function() use ($functionName){
                             echo call_user_func_array($functionName, func_get_args());

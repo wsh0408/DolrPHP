@@ -29,6 +29,9 @@ define('IS_CGI', substr(PHP_SAPI, 0, 3) == 'cgi' ? 1 : 0);
 define('IS_WIN', strstr(PHP_OS, 'WIN') ? 1 : 0);
 define('IS_CLI', PHP_SAPI == 'cli' ? 1 : 0);
 
+//DOLRPHP_VERSION
+define('DOLRPHP_VERSION', '3.0.0');
+
 //init more
 include DOLR_PATH . 'App.php';
 //run & trace
