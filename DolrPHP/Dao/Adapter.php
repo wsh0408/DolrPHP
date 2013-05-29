@@ -88,6 +88,13 @@ abstract class DB_Adapter
     protected $_lastInsertId;
 
     /**
+     * 影响的行数
+     *
+     * @var integer
+     */
+    protected $_affectdRows = 0;
+
+    /**
      * 上次查询的SQL
      *
      * @var string
@@ -185,7 +192,9 @@ abstract class DB_Adapter
                 break;
         }
         $this->_setLastSql = $sql;
+        $this->_affectdRows = $this->getAffectedRows($res);
         $this->_sqlStructure = $this->_resetSqlStructure();
+        $this->_log('[rows:' . $this->_affectdRows . ']' . $sql, self::LOG_TYPE_SQL);
         return $ret;
     }
 
@@ -608,9 +617,14 @@ abstract class DB_Adapter
      * @param string $type   error | sql
      * @return void
      */
-    protected function _log($string, $type = 'error')
+    protected function _log($string, $type = self::LOG_TYPE_ERROR)
     {
-        error_log($string);
+        if ($type == 'error') {
+            error_log($string);
+        }
+        if ($type == self::LOG_TYPE_SQL) {
+            Trace::L($string, Trace::LOG_TYPE_SQL);
+        }
     }
 
      /**

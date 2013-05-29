@@ -25,6 +25,7 @@ class Trace
     const LOG_TYPE_CLASS    = 1;
     const LOG_TYPE_TEMPLATE = 2;
     const LOG_TYPE_ERROR    = 3;
+    const LOG_TYPE_SQL      = 4;
 
     /**
      * 初始时间
@@ -183,7 +184,10 @@ class Trace
                 break;
             case self::LOG_TYPE_ERROR:
                 array_push(self::$errorInfo, $value);
-            //TODO:
+                break;
+            case self::LOG_TYPE_SQL:
+                array_push(self::$dbLog, $value);
+                break;
         }
     }
 
@@ -203,7 +207,7 @@ class Trace
         //normalInfo
         $normalInfo = empty(self::$normalInfo) ? '' : '<li>' . join('</li><li>', array_reverse(self::$normalInfo)) . '</li>';
         //dbLog
-        $dbLog = empty(self::$dbLog) ? '' : '<li>DB: ' . join('</li><li>SQL:', array_reverse(self::$dbLog)) . '</li>';
+        $dbLog = empty(self::$dbLog) ? '' : '<li>SQL:' . join('</li><li>SQL:', self::$dbLog) . '</li>';
         //当前页面
         $currentFile = $_SERVER['SCRIPT_FILENAME'];
         //模块目录
@@ -213,8 +217,8 @@ class Trace
 
         //加载的类
         $classes  = '<ol><li>' . join('</li><li>', self::$loadedClasses) . '</li></ol>';
-        $runInfo  = '<ul>' . $errorInfo . $dbLog . $normalInfo . '</ul>';
-        $runInfo  = ($runInfo == '<ul></ul>') ? '运行正常' : $runInfo;
+        $runInfo  = $errorInfo . $dbLog . $normalInfo;
+        $runInfo  = empty($runInfo) ? '运行正常' : "<ul>$runInfo</ul>";
         $args     = array(
                      '[TIME_USAGE]'   => $timeUsage,
                      '[MEM_USAGE]'    => $memUsage,

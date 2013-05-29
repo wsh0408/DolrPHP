@@ -951,7 +951,6 @@ class Twig_Environment
                 }
             }
         }
-
         foreach ($this->functionCallbacks as $callback) {
             if (false !== $function = call_user_func($callback, $name)) {
                 return $function;
