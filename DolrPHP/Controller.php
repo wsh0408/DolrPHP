@@ -85,8 +85,8 @@ class Controller
     /**
      * AJAX返回
      *
-     * @param mixed  $data 返回的数据
-     * @param string $info 消息
+     * @param mixed   $data 返回的数据
+     * @param string  $info 消息
      *
      * @return string
      */

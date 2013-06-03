@@ -230,6 +230,7 @@ class App
     {
         $baseVar = array(
                     'DOLRPHP_VERSION' => DOLRPHP_VERSION,
+                    'DEBUG'           => intval(Config::get('DEBUG')),
                     'APP_ROOT'        => APP_ROOT,
                     'CURRENT_URL'     => self::$url,
                     'ACTION_NAME'     => self::$actionName,

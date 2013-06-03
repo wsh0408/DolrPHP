@@ -177,7 +177,7 @@ abstract class DB_Adapter
         $this->_connector = &$this->_writer;
         switch (strtoupper($matches[1])) {
             case 'INSERT':
-                $this->exec($sql);
+                $res = $this->exec($sql);
                 $ret = $this->getInsertId();
                 break;
             case 'DELETE':

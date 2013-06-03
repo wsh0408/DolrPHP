@@ -21,6 +21,8 @@ function dolrAutoLoader($className)
         include Config::get('MODEL_PATH') . $className . '.php';
     } elseif (file_exists(DOLR_PATH . $className . '.php')) { //BASE
         include DOLR_PATH . $className . '.php';
+    } elseif (file_exists(EXT_PATH . $className . '.php')) { //BASE
+        include EXT_PATH . $className . '.php';
     } elseif ($className == 'Db') { //DB
         include DB_PATH . 'Db.php';
     } elseif (false !== stripos($className, 'Db_Adapter_')) { //DB
@@ -164,6 +166,18 @@ function session($name = null, $value = null)
 }
 
 /**
+ * 格式化路径
+ *
+ * @param string $path 需要格式化的路径
+ *
+ * @return string
+ */
+function formatPath($path)
+{
+    return str_replace('//', '/',str_replace('\\', '/', $path));
+}
+
+/**
  * ================= 以下为辅助函数 ===================
  */
 /**
@@ -179,7 +193,9 @@ function makeDir($path, $mode = 0755)
     if (empty($path)) {
         return false;
     }
-
+    if (file_exists($path)) {
+        return true;
+    }
     return mkdir($path, $mode, true);
 }
 
