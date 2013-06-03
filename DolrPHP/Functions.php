@@ -172,7 +172,7 @@ function session($name = null, $value = null)
  *
  * @return string
  */
-function formatPath($path)
+function pathFormat($path)
 {
     return str_replace('//', '/',str_replace('\\', '/', $path));
 }
