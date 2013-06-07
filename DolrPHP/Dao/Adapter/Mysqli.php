@@ -28,7 +28,6 @@ class Db_Adapter_Mysqli extends Db_Adapter
     {
         try {
             $res = $this->_connector->query($sql);
-            $this->_lastInsertId = $res->insert_id;
             return $res;
         } catch (PDOException $e) {
             throw $e;
@@ -57,30 +56,21 @@ class Db_Adapter_Mysqli extends Db_Adapter
 
     protected function _fetchResult($res, $fetchStyle)
     {
-        if (!method_exists($res, 'get_result')) {
-            return false;
-        }
-        $result = $res->get_result();
         $fetchFunc = 'fetch_' . strtolower($fetchStyle);
-        if (!method_exists($result, $fetchFunc)) {
+        if (!method_exists($res, $fetchFunc)) {
             return false;
         }
         $arr = array();
-        while ($row = $result->$fetchFunc()) {
+        while ($row = $res->$fetchFunc()) {
             $arr[] = $row;
         }
 
         return $arr;
     }
 
-    protected function getInsertId()
-    {
-        return $this->lastInsertId;
-    }
-
     protected function getAffectedRows()
     {
-        return $this->res->affected_rows;
+        return $this->_connector->affected_rows;
     }
 
     public function close()

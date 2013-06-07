@@ -31,6 +31,7 @@ abstract class DB_Adapter
     const SQL_TYPE_DELETE = 'delete';
     const SQL_TYPE_UPDATE = 'update';
     const SQL_TYPE_SELECT = 'select';
+    const SQL_TYPE_HAS    = 'has';
 
     /**
      * log type
@@ -191,7 +192,7 @@ abstract class DB_Adapter
                 $ret = $this->_fetch($res, $fetchType);
                 break;
         }
-        $this->_setLastSql = $sql;
+        $this->_lastSql = $sql;
         $this->_affectdRows = $this->getAffectedRows($res);
         $this->_sqlStructure = $this->_resetSqlStructure();
         $this->_log('[rows:' . $this->_affectdRows . ']' . $sql, self::LOG_TYPE_SQL);
@@ -244,6 +245,25 @@ abstract class DB_Adapter
     }
 
     /**
+     * 判断一条记录存在与否
+     *
+     * @param string $condition  'where' of sql
+     *
+     * @return array
+     */
+    public function has($condition = '')
+    {
+        $this->_sqlStructure['LIMIT'] = '1';
+        if (!empty($condition)) {
+            $this->_sqlStructure['WHERE'] = strval($condition);
+        }
+        $sql = $this->_getSql(self::SQL_TYPE_HAS);
+        $res = array_pop($this->query($sql));
+
+        return (boolean)$res['result'];
+    }
+
+    /**
      * 获取一条记录 , getRow别名方法
      *
      * @param string $condition  'where' of sql
@@ -255,6 +275,7 @@ abstract class DB_Adapter
     {
         $this->_sqlStructure['LIMIT'] = '1';
         $result = $this->select($condition, $fetchStyle);
+
         return array_shift($result);
     }
 
@@ -271,6 +292,7 @@ abstract class DB_Adapter
             $this->_sqlStructure['WHERE'] = strval($condition);
         }
         $sql = $this->_getSql(self::SQL_TYPE_SELECT);
+
         return $this->query($sql, $fetchStyle);
     }
 
@@ -456,6 +478,8 @@ abstract class DB_Adapter
         if ($res) {
             return $res['count'];
         }
+
+        return 0;
     }
 
     /**
@@ -512,10 +536,14 @@ abstract class DB_Adapter
                 $value = '"' . join('","', $this->_data) . '"';
                 $sql    = "INSERT INTO `{$tableName}`({$keys}) VALUES({$value})";
                 break;
+            case self::SQL_TYPE_HAS:
+                $sql = "SELECT EXISTS(SELECT 1{$from}{$join}{$on}{$where}) AS `result`";
+                break;
             default:
                 break;
         }
         $this->_multiInsert = false;
+
         return trim($sql);
     }
 
@@ -607,7 +635,7 @@ abstract class DB_Adapter
             $this->_sqlStructure[strtoupper($methodName)] = $value;
             return $this;
         }
-        return "method ‘$methodName’ not exists!";
+        return "method '{$methodName}' not exists!";
     }
 
     /**
@@ -622,7 +650,7 @@ abstract class DB_Adapter
         if ($type == 'error') {
             error_log($string);
         }
-        if ($type == self::LOG_TYPE_SQL) {
+        if (class_exists('Trace') && $type == self::LOG_TYPE_SQL) {
             Trace::L($string, Trace::LOG_TYPE_SQL);
         }
     }
@@ -744,7 +772,6 @@ abstract class DB_Adapter
     abstract protected function fetchAssoc($resource);
     abstract protected function fetchObject($resource);
     abstract protected function exec($sql);
-    abstract protected function getInsertId();
     abstract protected function getAffectedRows();
     abstract protected function close();
 
