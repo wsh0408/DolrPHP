@@ -68,6 +68,11 @@ class Db_Adapter_Mysqli extends Db_Adapter
         return $arr;
     }
 
+    protected function getInsertId()
+    {
+        return $this->_connector->insert_id;
+    }
+
     protected function getAffectedRows()
     {
         return $this->_connector->affected_rows;

@@ -68,6 +68,11 @@ class Db_Adapter_Pdo extends Db_Adapter
         return $arr;
     }
 
+    protected function getInsertId()
+    {
+        return $this->_connector->lastInsertId();
+    }
+
     protected function getAffectedRows()
     {
         return $this->_affectedRows;

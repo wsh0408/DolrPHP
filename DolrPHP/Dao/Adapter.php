@@ -773,6 +773,7 @@ abstract class DB_Adapter
     abstract protected function fetchAssoc($resource);
     abstract protected function fetchObject($resource);
     abstract protected function exec($sql);
+    abstract protected function getInsertId();
     abstract protected function getAffectedRows();
     abstract protected function close();
 
