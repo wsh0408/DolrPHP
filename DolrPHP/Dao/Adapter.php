@@ -247,18 +247,19 @@ abstract class DB_Adapter
     /**
      * 判断一条记录存在与否
      *
-     * @param string $condition  'where' of sql
+     * @param string/array $condition  'where' of sql
      *
      * @return array
      */
-    public function has($condition = '')
+    public function has($condition)
     {
         $this->_sqlStructure['LIMIT'] = '1';
         if (!empty($condition)) {
-            $this->_sqlStructure['WHERE'] = strval($condition);
+            $this->_sqlStructure['WHERE'] = $condition;
         }
         $sql = $this->_getSql(self::SQL_TYPE_HAS);
-        $res = array_pop($this->query($sql));
+        $res = $this->query($sql);
+        $res = array_pop($res);
 
         return (boolean)$res['result'];
     }
