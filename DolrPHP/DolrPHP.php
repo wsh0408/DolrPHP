@@ -15,7 +15,7 @@ defined('APP_PATH') || exit("请先定义应用目录常量'APP_PATH'(绝对路�
                             eg:define('APP_PATH', __DIR__ . '/Home/')");
 
 $dirOfLocal = str_replace('\\', '/', dirname(__FILE__));
-$dirOfFile  = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])) . '/';
+echo $dirOfFile  = str_replace(array('\\','//'), '/', dirname($_SERVER['SCRIPT_NAME']). '/') ;
 
 //base
 defined('APP_ROOT') || define('APP_ROOT', $dirOfFile . basename(trim(APP_PATH, '/')) . '/');
