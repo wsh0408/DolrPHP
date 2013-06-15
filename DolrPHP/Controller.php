@@ -75,7 +75,7 @@ class Controller
         if (is_null($url)) {
             $url = $_SERVER['HTTP_REFERER']; //来源页面
         }
-        $tpl = strtolower(Config::get('PAGE_' . strtoupper($type)));
+        $tpl = Config::get('PAGE_' . strtoupper($type));
         $this->set('message', $msg);
         $this->set('url', $url);
         $this->set('delay', $delay);
@@ -132,7 +132,7 @@ class Controller
             $styleSet   = Config::get('TPL_STYLE');
             $style      = empty($styleSet) ? '' : $styleSet . '/';
             $suffix     = Config::get('TPL_SUFFIX');
-            $tplPath    = strtolower("{$style}{$Controller}/{$action}.{$suffix}");
+            $tplPath    = "{$style}{$Controller}/{$action}.{$suffix}";
         }
 
         $this->_log($tplPath, Trace::LOG_TYPE_TEMPLATE);

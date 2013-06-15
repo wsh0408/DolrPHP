@@ -558,8 +558,24 @@ abstract class DB_Adapter
     public function array2Where($where)
     {
         $tmp = array();
+        $allowModes = array('=', '!=', '>=', '<=', '><', '>', '<');
         foreach ($where as $key => $value) {
-            $tmp[] = "`{$key}` = '{$value}'";
+            $mode = '=';
+            if (preg_match('/\[(.*?)\]/', $key, $matchs)) {
+                $key = strstr($key, '[', true); //去除[xxx]
+                if (in_array($matchs[1], $allowModes)) {
+                    $mode = $matchs[1];
+                }
+            }
+            if ($mode == '><') {//between and
+                if (is_array($value) && count($value) == 2) {
+                    $value = array_values($value);
+                    $tmp[] = "`{$key}` BETWEEN '{$value[0]}' AND '{$value[1]}";
+                } else {
+                    $mode = '=';
+                }
+            }
+            $tmp[] = "`{$key}` {$mode} '{$value}'";
         }
 
         return join(' AND ', $tmp);

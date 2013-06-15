@@ -294,6 +294,9 @@ class App
                     if (!preg_match('/^[a-z]/i', $alias)) {//以字母开头
                         $alias = $functionName;
                     }
+                    if (!function_exists($functionName)) {
+                        return false;
+                    }
                     self::$tplEngine->addFunction(
                         new Twig_SimpleFunction($alias, function() use ($functionName){
                             echo call_user_func_array($functionName, func_get_args());
