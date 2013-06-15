@@ -574,8 +574,9 @@ abstract class DB_Adapter
                 } else {
                     $mode = '=';
                 }
+            } else {
+                $tmp[] = "`{$key}` {$mode} ('{$value}')";
             }
-            $tmp[] = "`{$key}` {$mode} '{$value}'";
         }
 
         return join(' AND ', $tmp);
