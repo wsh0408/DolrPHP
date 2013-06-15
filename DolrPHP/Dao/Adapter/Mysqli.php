@@ -68,6 +68,11 @@ class Db_Adapter_Mysqli extends Db_Adapter
         return $arr;
     }
 
+    protected function escape($string)
+    {
+        return mysql_real_escape_string($string);
+    }
+
     protected function getInsertId()
     {
         return $this->_connector->insert_id;

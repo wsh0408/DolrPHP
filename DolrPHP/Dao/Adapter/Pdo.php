@@ -68,6 +68,11 @@ class Db_Adapter_Pdo extends Db_Adapter
         return $arr;
     }
 
+    protected function escape($string)
+    {
+        return addslashes($string);
+    }
+
     protected function getInsertId()
     {
         return $this->_connector->lastInsertId();

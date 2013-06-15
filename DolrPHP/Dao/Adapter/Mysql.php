@@ -67,6 +67,11 @@ class Db_Adapter_Mysql extends Db_Adapter
         return $arr;
     }
 
+    protected function escape($string)
+    {
+        return mysql_real_escape_string($string);
+    }
+
     protected function getInsertId()
     {
         return mysql_insert_id();

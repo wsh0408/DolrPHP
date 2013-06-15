@@ -510,7 +510,7 @@ abstract class DB_Adapter
         $order  = empty($this->_sqlStructure['ORDER']) ? '' : " ORDER BY {$this->_sqlStructure['ORDER']}";
         $limit  = empty($this->_sqlStructure['LIMIT']) ? '' : " LIMIT {$this->_sqlStructure['LIMIT']}";
         $sql = '';
-        $this->_data = array_map('mysql_escape_string', $this->_data);
+        $this->_data = array_map(array($this,'escape'), $this->_data);
         switch ($sqlType) {
             case self::SQL_TYPE_SELECT:
                 $sql = "SELECT {$fields}{$from}{$join}{$on}{$where}{$order}{$limit}";
@@ -788,6 +788,7 @@ abstract class DB_Adapter
     abstract protected function fetchNum($resource);
     abstract protected function fetchAssoc($resource);
     abstract protected function fetchObject($resource);
+    abstract protected function escape($string);
     abstract protected function exec($sql);
     abstract protected function getInsertId();
     abstract protected function getAffectedRows();
