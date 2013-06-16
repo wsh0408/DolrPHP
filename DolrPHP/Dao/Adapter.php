@@ -628,6 +628,7 @@ abstract class DB_Adapter
      * @param string $methodName 字段名
      * @param mixed  $args       参数
      *
+     *
      * @return mixed
      */
     public function __call($methodName, $args)
@@ -639,10 +640,11 @@ abstract class DB_Adapter
             $field = strtolower(preg_replace('/(\w)([A-Z])/', '\\1_\\2', substr($methodName, 5)));
             if (is_array($value)) {
                 $where = "`{$field}` IN('".join("','", $value)."')";
+                return $this->where($where)->getAll();// 多条
             } elseif (is_scalar($value)) {
                 $where = "`{$field}` = '{$value}'";
+                return $this->where($where)->getRow();// 单条
             }
-            return $this->where($where)->getRow();
         }
         if (strtolower($methodName) == 'data') {
             $this->_data = $value;
