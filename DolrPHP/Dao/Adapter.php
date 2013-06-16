@@ -351,9 +351,9 @@ abstract class DB_Adapter
     /**
      * 查询一列值，返回一维数组
      *
-     * @param string  $colName      field name
-     * @param string  $condition    'where' of sql
-     * @param boolean $toOneDimension  trans the result to one-dimension array
+     * @param string  $colName        field name
+     * @param boolean $toOneDimension trans the result to one-dimension array
+     * @param string  $condition      'where' of sql
      *
      * @example
      * <pre>
@@ -371,7 +371,7 @@ abstract class DB_Adapter
      * </pre>
      * @return array
      */
-    public function getCol($colName, $condition = '', $toOneDimension = false)
+    public function getCol($colName, $toOneDimension = true, $condition = '')
     {
         if (empty($this->_tableMeta)) {
             throw new Exception("未初始化目标数据表");
