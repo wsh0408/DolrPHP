@@ -391,7 +391,7 @@ class Rbac_RolePermRel extends Model
     public function getRolePermIds($roleId)
     {
         $condition = array($this->_table['roleIdField'] => $roleId);
-        $permIds = $this->_dao->getCol($this->_table['permIdField'], $condition, true);
+        $permIds = $this->_dao->getCol($this->_table['permIdField'], true, $condition);
         return $permIds;
     }
 
