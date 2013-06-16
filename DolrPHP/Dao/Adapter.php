@@ -231,11 +231,10 @@ abstract class DB_Adapter
      * 删除记录
      *
      * @param string $condition  'where' of sql
-     * @param array  $values values to bind
      *
      * @return bool
      */
-    public function del($condition = '', array $values = array())
+    public function del($condition = '')
     {
         if (!empty($condition)) {
             $this->_sqlStructure['WHERE'] = strval($condition);
@@ -354,7 +353,7 @@ abstract class DB_Adapter
      *
      * @param string  $colName      field name
      * @param string  $condition    'where' of sql
-     * @param boolean $convertTo2D  trans the result to Two-dimension array
+     * @param boolean $toOneDimension  trans the result to one-dimension array
      *
      * @example
      * <pre>
@@ -367,12 +366,12 @@ abstract class DB_Adapter
      *      2 => array('user' => 'userC'),
      *      3 => array('user' => 'userD'),
      *     );
-     *  else if $convetTo2D is true:
+     *  else if $convetTo1D is true:
      *  array('userA', 'userB', 'userC', 'userD',);
      * </pre>
      * @return array
      */
-    public function getCol($colName, $condition = '', $convertTo2D = false)
+    public function getCol($colName, $condition = '', $toOneDimension = false)
     {
         if (empty($this->_tableMeta)) {
             throw new Exception("未初始化目标数据表");
@@ -384,15 +383,15 @@ abstract class DB_Adapter
         $this->_sqlStructure['FIELDS'] = $colName;
         $result = $this->select($condition);
         $cols = array();
-        $cols2D = array();
+        $cols1D = array();
         foreach ($result as $value) {
             if (isset($value[$colName])) {
                 $cols[][$colName] = $value[$colName];
-                $cols2D[] = $value[$colName];
+                $cols1D[] = $value[$colName];
             }
         }
 
-        return $convertTo2D ? $cols2D : $cols;
+        return $toOneDimension ? $cols1D : $cols;
     }
 
     /**
@@ -558,7 +557,7 @@ abstract class DB_Adapter
     public function array2Where($where)
     {
         $tmp = array();
-        $allowModes = array('=', '!=', '>=', '<=', '><', '>', '<');
+        $allowModes = array('=', '!=', '>=', '<=', '><', '>', '<', 'in');
         foreach ($where as $key => $value) {
             $mode = '=';
             if (preg_match('/\[(.*?)\]/', $key, $matchs)) {

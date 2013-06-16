@@ -22,6 +22,7 @@ class Db_Adapter_Mysql extends Db_Adapter
      *
      * @param string $sql SQL
      *
+     * @throws Exception|PDOException
      * @return mixed
      */
     public function exec($sql)
