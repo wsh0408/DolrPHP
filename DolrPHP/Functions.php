@@ -40,18 +40,21 @@ function dolrAutoLoader($className)
  *
  * @param string              $path        目标路径
  * @param string|array|object $content     内容
- * @param bool                $serialized  是否json格式化
+ * @param bool                $serialize   是否json格式化
  *
  * @return  void
  */
-function write($path, $content, $serialized = true)
+function write($path, $content, $serialize = true)
 {
-    if ($serialized)
+    if ($serialize) {
         $content = data2json($content);
-    if (!file_exists(dirname($path)) and false === makeDir(dirname($path)))
+    }
+    if (!file_exists(dirname($path)) and false === makeDir(dirname($path))) {
         trigger_error('文件写入失败：[路径"' . dirname($path) . '"不存在，且尝试创建失败]');
-    else
-        file_put_contents($path, $content);
+    } else {
+        return file_put_contents($path, $content);
+    }
+    return false;
 }
 
 
@@ -59,16 +62,16 @@ function write($path, $content, $serialized = true)
  * 读取文件
  *
  * @param string  $path       目标路径
- * @param boolean $serialized 是否json格式化
+ * @param boolean $serialize  是否json格式化
  *
  * @return string|array
  */
-function read($path, $serialized = true)
+function read($path, $serialize = true)
 {
     if (!file_exists($path) or !is_readable($path)) {
         trigger_error('文件读取失败：[路径"' . $path . '"不存在或不可读]');
     }
-    if ($serialized) {
+    if ($serialize) {
         return json_decode(file_get_contents($path), true);
     }
 
@@ -83,7 +86,7 @@ function read($path, $serialized = true)
  *
  * @return string
  */
-function createUrl($alias = '', $params = array())
+function url($alias = '', $params = array())
 {
     $tmp    = explode('/', $alias == '' ? 'Index/index' : $alias);
     $module = trim(array_shift($tmp));
@@ -101,8 +104,10 @@ function createUrl($alias = '', $params = array())
  *
  * @return void
  */
-function display($tplPath = '', $data = array(), $extract = true)
+function display($tplPath = '', $data = array())
 {
+    //是否自动释放数组为单个变量
+    $extract = Config::get('TPL_AUTO_EXTRACT_VAR');
     //如果没有传入的话
     if ($tplPath == '') {
         $module  = Request::$module;
@@ -248,7 +253,7 @@ function byteFormat($size, $dec = 2)
 /**
  * get the ip address
  *
- * @param boolean $toLong 是否转换为整形
+ * @param boolean $toLong 是否转换为整型
  *
  * @return string | int
  */
@@ -304,7 +309,7 @@ function sendHttpStatus($code)
 /**
  * 数据json返回
  *
- * @param  mixed $data
+ * @param  mixed $data 数据
  *
  * @return string
  */
@@ -346,9 +351,9 @@ function murlencode($data)
  * 字符串截取，支持中文和其他编码
  *
  * @param string   $str     需要转换的字符串
- * @param int      $start   开始位置
- * @param int      $length  截取长度
- * @param boolean  $suffix  截断显示字符
+ * @param integer  $start   开始位置
+ * @param integer  $length  截取长度
+ * @param boolean  $suffix  显示省略符
  * @param string   $charset 编码格式
  *
  * @return string

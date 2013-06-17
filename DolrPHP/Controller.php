@@ -25,7 +25,7 @@ class Controller
      *
      * @return void
      */
-    protected function init()
+    public function __init()
     {
         # do nothing
     }
@@ -150,7 +150,7 @@ class Controller
      *
      * @example
      * <pre>
-     * $this->go('@Login:index');
+     * $this->go('@Login/index');
      * $this->go('http://www.dolrphp.com');
      * </pre>
      *
@@ -159,7 +159,7 @@ class Controller
     public function go($url)
     {
         if (stripos($url, '@') === 0) {
-            $arr = explode(':', trim($url, '@'));
+            $arr = explode('/', trim($url, '@'));
             if (empty($arr)) {
                 return false;
             }
@@ -176,7 +176,7 @@ class Controller
      * 添加模板函数
      *
      * @param string|array $function 要添加的函数，可是使用字符串或者数组
-     * App::addTemplateFunction(
+     * $this->addTplFunction(
      *                      array('url' => 'U'),
      *                      array('xxx' => 'xxxx'),
      *                       ...
