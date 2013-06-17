@@ -201,7 +201,7 @@ class Controller
      *
      * @return void
      */
-    public function error404($string = '')
+    public function error404($string = '404 NOT FOUND!')
     {
         sendHttpStatus(404);
         if (!Config::get('TPL_ENGINE_ON')) {
