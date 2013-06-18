@@ -142,8 +142,8 @@ class App
     {
         $action = self::$actionName;
         //call initialize
-        if (is_callable(array(self::$controller, 'init')))
-            self::$controller->init();
+        if (is_callable(array(self::$controller, '__init')))
+            self::$controller->__init();
         //call action
         if (is_callable(array(self::$controller, $action))) {
             try {
