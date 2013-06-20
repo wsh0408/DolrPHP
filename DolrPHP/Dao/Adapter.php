@@ -371,7 +371,7 @@ abstract class DB_Adapter
      * </pre>
      * @return array
      */
-    public function getCol($colName, $toOneDimension = true, $condition = '')
+    public function getCol($colName, $condition = '',$toOneDimension = true)
     {
         if (empty($this->_tableMeta)) {
             throw new Exception("未初始化目标数据表");

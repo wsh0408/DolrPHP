@@ -251,7 +251,7 @@ class App
     private static function _setTemplateCommonFunction()
     {
         $functionArray = array(
-                          'url'         => 'createUrl',
+                          'url'         => 'url',
                           'cookie'      => 'cookie',
                           'session'     => 'session',
                           'byte_format' => 'byteFormat',
