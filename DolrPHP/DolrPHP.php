@@ -22,7 +22,7 @@ defined('APP_ROOT') || define('APP_ROOT', $dirOfFile . basename(trim(APP_PATH, '
 defined('DOLR_PATH') || define('DOLR_PATH', $dirOfLocal . '/');
 
 //dirs
-define('DB_PATH',  DOLR_PATH . 'Dao/');             //DolrPHP 数据库驱动目录
+define('DAO_PATH',  DOLR_PATH . 'Dao/');            //DolrPHP 数据库驱动目录
 define('EXT_PATH', DOLR_PATH . 'Extension/');       //DolrPHP 拓展目录
 define('TPL_PATH', DOLR_PATH . 'Template/');        //DolrPHP 基础文件目录
 define('IS_CGI', substr(PHP_SAPI, 0, 3) == 'cgi' ? 1 : 0);

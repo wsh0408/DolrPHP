@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架
  *
- * @package     Db.Adapter
+ * @package     Dao.Adapter
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
@@ -12,9 +12,9 @@
  **/
 
 /**
- * DB Mysqli类
+ * Mysqli类
  **/
-class Db_Adapter_Mysqli extends Db_Adapter
+class Dao_Adapter_Mysqli extends Dao_Adapter
 {
 
     /**
@@ -88,4 +88,4 @@ class Db_Adapter_Mysqli extends Db_Adapter
         # code...
     }
 
-} // END class Db_Adapter_Pdo
+} // END class Dao_Adapter_Pdo

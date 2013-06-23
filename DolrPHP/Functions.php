@@ -23,10 +23,10 @@ function dolrAutoLoader($className)
         include DOLR_PATH . $className . '.php';
     } elseif (file_exists(EXT_PATH . $className . '.php')) { //BASE
         include EXT_PATH . $className . '.php';
-    } elseif ($className == 'Db') { //DB
-        include DB_PATH . 'Db.php';
-    } elseif (false !== stripos($className, 'Db_Adapter_')) { //DB
-        $file = DB_PATH . str_replace('_', '/', substr($className, 3)) . '.php';
+    } elseif ($className == 'Dao') { //DB
+        include DAO_PATH . 'Dao.php';
+    } elseif (false !== stripos($className, 'Dao_Adapter_')) { //DB
+        $file = DAO_PATH . str_replace('_', '/', substr($className, 3)) . '.php';
         if (file_exists($file)) {
             include $file;
         }

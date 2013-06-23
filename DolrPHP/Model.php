@@ -24,7 +24,7 @@ class Model
 
     public function __construct() {
         if (!self::$_isInitialized) {
-            Db::initialize(Config::get('DB_SET'), Config::get('DB_ENGINE'));
+            Dao::initialize(Config::get('DB_SET'), Config::get('DB_ENGINE'));
             self::$_isInitialized = true;
         }
     }
@@ -37,6 +37,6 @@ class Model
      */
     protected function dispense($tableName)
     {
-        return Db::getAdapter()->dispense($tableName);
+        return Dao::getAdapter()->dispense($tableName);
     }
 } // END class Model

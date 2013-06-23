@@ -2,7 +2,7 @@
 /**
  * DolrPHP轻量级PHP开发框架
  *
- * @package     Db.Adapter
+ * @package     Dao.Adapter
  * @copyright   Copyright (c) 2012 <www.dolrphp.com>
  * @author      Joychao <Joy@Joychao.cc>
  * @license     Apache 2.0
@@ -12,9 +12,9 @@
  **/
 
 /**
- * DB Mysql类
+ * Mysql类
  **/
-class Db_Adapter_Mysql extends Db_Adapter
+class Dao_Adapter_Mysql extends Dao_Adapter
 {
 
     /**
