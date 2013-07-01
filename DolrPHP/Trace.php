@@ -212,7 +212,7 @@ class Trace
         //当前页面
         $currentFile = substr($_SERVER['SCRIPT_FILENAME'], $rootLength);
         //模块目录
-        $moduleDir = Config::get('CONTROLLER_PATH') . ucfirst(App::$controllerName) . Config::get('CONTROLLER_IDENTITY') . '.php';
+        $moduleDir = Config::get('CONTROLLER_PATH');
         $moduleDir = substr($moduleDir, $rootLength);
         //模板目录
         $tplDir = empty(self::$tplName) ? '未使用模板或页面出错！' : Config::get('TPL_PATH');
