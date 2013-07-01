@@ -215,7 +215,7 @@ class Trace
         $moduleDir = Config::get('CONTROLLER_PATH') . ucfirst(App::$controllerName) . Config::get('CONTROLLER_IDENTITY') . '.php';
         $moduleDir = substr($moduleDir, $rootLength);
         //模板目录
-        $tplDir = empty(self::$tplName) ? '未使用模板或页面出错！' : Config::get('TPL_PATH') . self::$tplName;
+        $tplDir = empty(self::$tplName) ? '未使用模板或页面出错！' : Config::get('TPL_PATH');
         $tplDir = substr($tplDir, $rootLength);
         //加载的类
         $classes  = '<ol><li>' . join('</li><li>', self::$loadedClasses) . '</li></ol>';
