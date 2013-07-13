@@ -264,6 +264,9 @@ class Trace
                                  'line' => $errorLine,
                                 ),
                      );
+        if (in_array($errorNo, array(E_WARNING))) {
+            return;
+        }
         self::_outputError($ajaxArray, $html);
     }
 

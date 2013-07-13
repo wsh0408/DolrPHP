@@ -32,8 +32,13 @@ body { font-size:12px; font-family: "Microsoft YaHei"; background:#f4f4f4; }
         var foot = document.getElementById('foot');
         var time = {{delay}};
         var dot = '.';
+        var url = '{{url}}';
         function red(){
-            window.location.href = "{{url}}";
+            if (url.length) {
+                window.location.href = url;
+            } else {
+                window.history.back();
+            }
         }
         function dis(){
             foot.innerHTML = (time--) + '秒后自动跳转' + dot + '<a href="javascript:red();">立即跳转</a>        ';

@@ -196,40 +196,40 @@ function hashPasswd($password, $saltStr = FALSE) {
     }
     $hash = base64_encode(sha1($password . $salt, TRUE) . $salt);
     if ($saltStr) {
-        return $password === $hash;
+        return $hash;
     }
     return array( 'password' => $hash, 'salt' => $salt );
 }
 
 /**
  * 加密字符串
- * 
+ *
  * @param string $key        加密key
  * @param string $plain_text 目標字符串
- * 
+ *
  * @return string
  */
-function encrypt($key, $plain_text) {   
-    $plain_text = trim($plain_text);   
-	$iv = substr(md5($key), 0,mcrypt_get_iv_size (MCRYPT_CAST_256,MCRYPT_MODE_CFB));   
-	$c_t = mcrypt_cfb (MCRYPT_CAST_256, $key, $plain_text, MCRYPT_ENCRYPT, $iv);   
-	return trim(chop(base64_encode($c_t)));   
-}   
+function encrypt($key, $plain_text) {
+    $plain_text = trim($plain_text);
+	$iv = substr(md5($key), 0,mcrypt_get_iv_size (MCRYPT_CAST_256,MCRYPT_MODE_CFB));
+	$c_t = mcrypt_cfb (MCRYPT_CAST_256, $key, $plain_text, MCRYPT_ENCRYPT, $iv);
+	return trim(chop(base64_encode($c_t)));
+}
 
 /**
  * 解密字符串
- * 
+ *
  * @param string $key 加密key
  * @param string $c_t 密文
- * 
+ *
  * @return string
  */
-function decrypt($key, $c_t) {  
-    $c_t = trim(chop(base64_decode($c_t)));  
-    $iv = substr(md5($key), 0,mcrypt_get_iv_size (MCRYPT_CAST_256,MCRYPT_MODE_CFB));  
-    $p_t = mcrypt_cfb (MCRYPT_CAST_256, $key, $c_t, MCRYPT_DECRYPT, $iv);  
-    return trim(chop($p_t));  
-} 
+function decrypt($key, $c_t) {
+    $c_t = trim(chop(base64_decode($c_t)));
+    $iv = substr(md5($key), 0,mcrypt_get_iv_size (MCRYPT_CAST_256,MCRYPT_MODE_CFB));
+    $p_t = mcrypt_cfb (MCRYPT_CAST_256, $key, $c_t, MCRYPT_DECRYPT, $iv);
+    return trim(chop($p_t));
+}
 
 /**
  * ================= 以下为辅助函数 ===================

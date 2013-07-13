@@ -241,6 +241,7 @@ class App
                                 self::$template_var, $baseVar,
                                 Config::get('TPL_COMMON_VAR')
                               );
+
     }
 
     /**

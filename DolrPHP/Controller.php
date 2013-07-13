@@ -72,10 +72,8 @@ class Controller
      */
     private function _jump($type, $msg, $url, $delay = 2)
     {
-        if (is_null($url)) {
-            $url = $_SERVER['HTTP_REFERER']; //来源页面
-        }
         $tpl = Config::get('PAGE_' . strtoupper($type));
+        Config::set('DEBUG', false);
         $this->set('message', $msg);
         $this->set('url', $url);
         $this->set('delay', $delay);
