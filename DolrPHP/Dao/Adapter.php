@@ -237,7 +237,7 @@ abstract class Dao_Adapter
     public function del($condition = '')
     {
         if (!empty($condition)) {
-            $this->_sqlStructure['WHERE'] = strval($condition);
+            $this->_sqlStructure['WHERE'] = $condition;
         }
         $sql = $this->_getSql(self::SQL_TYPE_DELETE);
         return $this->query($sql);
