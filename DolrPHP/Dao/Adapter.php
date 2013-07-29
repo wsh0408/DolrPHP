@@ -289,7 +289,7 @@ abstract class Dao_Adapter
     public function select($condition = '', $fetchStyle = self::FETCH_TYPE_ASSOC)
     {
         if (!empty($condition)) {
-            $this->_sqlStructure['WHERE'] = strval($condition);
+            $this->_sqlStructure['WHERE'] = $condition;
         }
         $sql = $this->_getSql(self::SQL_TYPE_SELECT);
 
@@ -311,7 +311,7 @@ abstract class Dao_Adapter
         }
         $this->_data = $this->_filterData($data);
         if (!empty($condition)) {
-            $this->_sqlStructure['WHERE'] = strval($condition);
+            $this->_sqlStructure['WHERE'] = $condition;
         }
         $sql = $this->_getSql(self::SQL_TYPE_UPDATE);
         $res = $this->query($sql);
