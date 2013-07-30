@@ -31,7 +31,6 @@ class Dao_Adapter_Pdo extends Dao_Adapter
         try {
             $stmt = $this->_connector->prepare($sql);
             $stmt->execute();
-            $this->_affectedRows = $stmt->rowCount();
             return $stmt;
         } catch (PDOException $e) {
             throw $e;
@@ -78,9 +77,9 @@ class Dao_Adapter_Pdo extends Dao_Adapter
         return $this->_connector->lastInsertId();
     }
 
-    protected function getAffectedRows()
+    protected function getAffectedRows($stmt)
     {
-        return $this->_affectedRows;
+        return $stmt->rowCount();
     }
 
     public function close()
