@@ -175,7 +175,7 @@ abstract class Dao_Adapter
         }
         preg_match('/^([a-z]+)\s+/i', $sql, $matches);
         $sql = rtrim($sql, ';');
-        $this->_connector = &$this->_writer;
+        $this->_connector = $this->_writer;
         switch (strtoupper($matches[1])) {
             case 'INSERT':
                 $res = $this->exec($sql);
@@ -187,13 +187,13 @@ abstract class Dao_Adapter
                 $ret = $this->getAffectedRows($res);
                 break;
             default:
-                $this->_connector = &$this->_reader;
+                $this->_connector = $this->_reader;
                 $res = $this->exec($sql);
                 $ret = $this->_fetch($res, $fetchType);
                 break;
         }
-        $this->_lastSql = $sql;
-        $this->_affectdRows = $this->getAffectedRows($res);
+        $this->_lastSql      = $sql;
+        $this->_affectdRows  = $this->getAffectedRows($res);
         $this->_sqlStructure = $this->_resetSqlStructure();
         $this->_log('[rows:' . $this->_affectdRows . ']' . $sql, self::LOG_TYPE_SQL);
         return $ret;
