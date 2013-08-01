@@ -470,7 +470,7 @@ abstract class Dao_Adapter
         if (empty($this->_tableMeta)) {
             throw new Exception("未初始化目标数据表");
         }
-        if (empty($field) || !is_array($field, $this->_tableMeta['_fields'])) {
+        if (empty($field) || !in_array($field, $this->_tableMeta['_fields'])) {
             $field = $this->_tableMeta['_pk'];
         }
         $this->_sqlStructure['FIELDS'] = "COUNT(`{$field}`) AS `count`";
